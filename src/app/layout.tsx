@@ -22,7 +22,7 @@ export default function RootLayout({
     <html lang="ru" className={`${involve.variable} ${anticva.variable}`}>
       <body>
         <Header />
-        <main>{children}</main>
+        <main style={{ paddingTop: 112 }}>{children}</main>
         <Footer />
       </body>
     </html>

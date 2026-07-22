@@ -40,21 +40,16 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   return (
     <>
-      <section className="starfield" style={{ padding: "72px 0 56px" }}>
+      <section className="starfield" style={{ padding: "24px 0 56px" }}>
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
-          <Link
-            href="/"
-            style={{ display: "inline-block", marginBottom: 24, color: "var(--orange)", opacity: 0.8 }}
-          >
+          <Link href="/" className="nav-link" style={{ display: "inline-block", marginBottom: 24 }}>
             ← Все статьи
           </Link>
           <span className="tag" style={{ marginBottom: 20, display: "inline-flex" }}>
             {post.category}
           </span>
-          <h1 style={{ fontSize: "clamp(1.9rem, 4.5vw, 2.8rem)", maxWidth: 820, margin: "16px 0" }}>
-            {post.title}
-          </h1>
-          <div style={{ display: "flex", gap: 12, fontSize: "0.9rem", opacity: 0.65 }}>
+          <h1 style={{ fontSize: "var(--h2)", maxWidth: 820, margin: "16px 0" }}>{post.title}</h1>
+          <div style={{ display: "flex", gap: 12, fontSize: "var(--mini)", opacity: 0.75 }}>
             <span>{formatDate(post.date)}</span>
             <span>·</span>
             <span>{post.readingTime} мин чтения</span>
@@ -96,8 +91,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               textAlign: "center",
             }}
           >
-            <h3 style={{ marginBottom: 16 }}>Готовы узнать свою натальную карту?</h3>
-            <p style={{ color: "var(--beige-bg)", opacity: 0.75, marginBottom: 24 }}>
+            <h3 style={{ marginBottom: 16, fontSize: "1.5rem" }}>Готовы узнать свою натальную карту?</h3>
+            <p style={{ color: "var(--orange)", opacity: 0.85, marginBottom: 24 }}>
               Персональный расчёт, прогнозы и совместимость — бесплатно, за пару минут.
             </p>
             <a href="https://aiastro.ru/login" className="btn">

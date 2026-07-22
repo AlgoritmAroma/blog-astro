@@ -8,18 +8,15 @@ export default function BlogHome() {
 
   return (
     <>
-      <section className="starfield" style={{ padding: "96px 0 120px" }}>
+      <section className="starfield" style={{ padding: "48px 0 120px" }}>
         <div className="container" style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
-          <h1 style={{ fontSize: "clamp(2.2rem, 5vw, 3.2rem)", marginBottom: 24 }}>
-            Блог Astro AI
-          </h1>
+          <h1 style={{ marginBottom: 24 }}>Блог Astro AI</h1>
           <p
             style={{
               maxWidth: 640,
               margin: "0 auto",
-              color: "var(--beige-bg)",
-              opacity: 0.8,
-              fontSize: "1.1rem",
+              color: "var(--orange)",
+              opacity: 0.85,
             }}
           >
             Ведическая астрология простыми словами: натальные карты, совместимость, прогнозы и то,
