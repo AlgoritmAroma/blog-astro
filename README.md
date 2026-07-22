@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Astro AI — Блог
 
-## Getting Started
+Блог для [aiastro.ru](https://aiastro.ru), собранный в единой визуальной системе с основным
+сайтом: тёмный фон, золотой акцент `#b8844c`, шрифты Anticva (заголовки) и Involve (текст),
+арочные карточки-«окна» в духе церковной готики.
 
-First, run the development server:
+Next.js (App Router) со статическим экспортом (`output: "export"`) — сайт полностью
+статический и деплоится на GitHub Pages через Actions.
+
+## Разработка
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Открыть [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Как добавить новую статью
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Каждая статья — markdown-файл в `src/content/posts/*.md` с frontmatter:
 
-## Learn More
+```md
+---
+title: "Заголовок статьи"
+excerpt: "Короткое описание для карточки и меты."
+date: "2026-07-22"
+category: "Прогнозы" # Натальная карта / Совместимость / Прогнозы / Общее (или новая)
+cover: "/images/prediction.png" # путь к обложке из /public
+---
 
-To learn more about Next.js, take a look at the following resources:
+Текст статьи в Markdown.
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Сборка сама подхватит новый файл — отдельный слаг генерируется из имени файла
+(`retrogradny-merkuriy.md` → `/blog/retrogradny-merkuriy/`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Сборка и локальный статический предпросмотр
 
-## Deploy on Vercel
+```bash
+npm run build       # создаёт статический сайт в ./out
+npx serve out        # или любой статический сервер
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Деплой
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Пуш в `main` автоматически собирает и публикует сайт на GitHub Pages через
+`.github/workflows/deploy.yml`. Убедитесь, что в настройках репозитория
+(Settings → Pages → Source) выбрано **GitHub Actions**.
+
+`next.config.ts` подставляет `basePath: "/blog-astro"` только когда в окружении есть
+`GITHUB_PAGES=true` (workflow выставляет её сам) — локальный `npm run dev`/`npm run build`
+работает без basePath.
+
+## Шрифты и изображения
+
+Шрифты `Involve` и `Anticva`, а также обложки (`/public/images`) — фирменные активы
+Astro AI, скопированные с основного сайта для визуальной консистентности блога.
