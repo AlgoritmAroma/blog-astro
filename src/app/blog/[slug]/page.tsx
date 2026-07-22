@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import CloudDivider from "@/components/CloudDivider";
 import PostCard from "@/components/PostCard";
 import { getAllPosts, getAllSlugs, getPostBySlug, getRelatedPosts } from "@/lib/posts";
+import { withBasePath } from "@/lib/basePath";
 
 export function generateStaticParams() {
   return getAllSlugs().map((slug) => ({ slug }));
@@ -75,7 +76,13 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               maxWidth: 640,
             }}
           >
-            <Image src={post.cover} alt={post.title} fill sizes="640px" style={{ objectFit: "cover" }} />
+            <Image
+              src={withBasePath(post.cover)}
+              alt={post.title}
+              fill
+              sizes="640px"
+              style={{ objectFit: "cover" }}
+            />
           </div>
 
           <article className="prose" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />

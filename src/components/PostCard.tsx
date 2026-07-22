@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { PostMeta } from "@/lib/posts";
+import { withBasePath } from "@/lib/basePath";
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("ru-RU", {
@@ -25,7 +26,7 @@ export default function PostCard({ post }: { post: PostMeta }) {
         }}
       >
         <Image
-          src={post.cover}
+          src={withBasePath(post.cover)}
           alt={post.title}
           fill
           sizes="(max-width: 720px) 100vw, 360px"
