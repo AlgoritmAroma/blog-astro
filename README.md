@@ -44,6 +44,8 @@ npx serve out        # или любой статический сервер
 
 ## Деплой
 
+### GitHub Pages
+
 Пуш в `main` автоматически собирает и публикует сайт на GitHub Pages через
 `.github/workflows/deploy.yml`. Убедитесь, что в настройках репозитория
 (Settings → Pages → Source) выбрано **GitHub Actions**.
@@ -51,6 +53,24 @@ npx serve out        # или любой статический сервер
 `next.config.ts` подставляет `basePath: "/blog-astro"` только когда в окружении есть
 `GITHUB_PAGES=true` (workflow выставляет её сам) — локальный `npm run dev`/`npm run build`
 работает без basePath.
+
+### Docker (self-hosted / VPS)
+
+Multi-stage сборка: статический экспорт Next.js собирается в node-контейнере, а
+раздаётся через `nginx:alpine`. `GITHUB_PAGES` внутри Docker-сборки не выставляется,
+поэтому сайт раздаётся с корня домена (без `/blog-astro`).
+
+```bash
+docker compose up -d --build
+```
+
+Сайт поднимется на [http://localhost:8080](http://localhost:8080) (порт задаётся в
+`docker-compose.yml`). Либо вручную:
+
+```bash
+docker build -t astro-ai-blog .
+docker run -d -p 8080:80 --name astro-ai-blog astro-ai-blog
+```
 
 ## Шрифты и изображения
 
