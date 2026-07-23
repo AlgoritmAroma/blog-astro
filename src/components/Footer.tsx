@@ -4,7 +4,7 @@ export default function Footer() {
   return (
     <footer className="site-footer">
       <div className="footer-top">
-        <h3 style={{ fontSize: "2.125rem" }}>Астро AI</h3>
+        <h3>Астро AI</h3>
       </div>
 
       <div className="footer-bottom">
