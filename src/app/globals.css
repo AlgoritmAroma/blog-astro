@@ -164,18 +164,16 @@ h3 {
   font-size: 0.75rem;
 }
 
-/* ---------- starfield hero background ---------- */
+/* ---------- page-wide starfield ----------
+   Fixed behind everything (like aiastro.ru's persistent star layer), so any
+   black area — hero, header before scroll, footer — shows the same stars
+   instead of only the boxed hero section. */
 
-.starfield {
-  position: relative;
-  background: var(--black);
-  overflow: hidden;
-}
-
-.starfield::before {
-  content: "";
-  position: absolute;
+.page-stars {
+  position: fixed;
   inset: 0;
+  z-index: -1;
+  background-color: var(--black);
   background-image: radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent 60%),
     radial-gradient(1.5px 1.5px at 25% 65%, #fff, transparent 60%),
     radial-gradient(1px 1px at 40% 15%, #fff, transparent 60%),

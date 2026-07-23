@@ -8,7 +8,7 @@ export default function BlogHome() {
 
   return (
     <>
-      <section className="starfield" style={{ padding: "48px 0 120px" }}>
+      <section style={{ padding: "48px 0 120px" }}>
         <div className="container" style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
           <h1 style={{ marginBottom: 24 }}>Блог Astro AI</h1>
           <p

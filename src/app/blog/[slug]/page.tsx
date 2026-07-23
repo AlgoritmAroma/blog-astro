@@ -40,7 +40,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   return (
     <>
-      <section className="starfield" style={{ padding: "24px 0 56px" }}>
+      <section style={{ padding: "24px 0 56px" }}>
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
           <Link href="/" className="nav-link" style={{ display: "inline-block", marginBottom: 24 }}>
             ← Все статьи

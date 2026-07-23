@@ -21,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${involve.variable} ${anticva.variable}`}>
       <body>
+        <div className="page-stars" aria-hidden="true" />
         <Header />
         <main style={{ paddingTop: 112 }}>{children}</main>
         <Footer />
