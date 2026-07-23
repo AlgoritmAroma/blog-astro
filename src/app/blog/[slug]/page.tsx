@@ -1,10 +1,14 @@
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import CloudDivider from "@/components/CloudDivider";
 import PostCard from "@/components/PostCard";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import ShareButtons from "@/components/ShareButtons";
+import AuthorBox from "@/components/AuthorBox";
+import Comments from "@/components/Comments";
 import { getAllPosts, getAllSlugs, getPostBySlug, getRelatedPosts } from "@/lib/posts";
 import { withBasePath } from "@/lib/basePath";
+import { formatDate, formatViews } from "@/lib/format";
 
 export function generateStaticParams() {
   return getAllSlugs().map((slug) => ({ slug }));
@@ -21,14 +25,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const posts = getAllPosts();
@@ -42,17 +38,25 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     <>
       <section style={{ padding: "24px 0 56px" }}>
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
-          <Link href="/" className="nav-link" style={{ display: "inline-block", marginBottom: 24 }}>
-            ← Все статьи
-          </Link>
-          <span className="tag" style={{ marginBottom: 20, display: "inline-flex" }}>
+          <Breadcrumbs
+            items={[
+              { label: "Главная", href: "https://aiastro.ru" },
+              { label: "Блог", href: "/" },
+              { label: post.category },
+              { label: post.title },
+            ]}
+          />
+          <span className="tag" style={{ margin: "20px 0", display: "inline-flex" }}>
             {post.category}
           </span>
           <h1 style={{ fontSize: "var(--h2)", maxWidth: 820, margin: "16px 0" }}>{post.title}</h1>
-          <div style={{ display: "flex", gap: 12, fontSize: "var(--mini)", opacity: 0.75 }}>
+          <div className="post-meta-row">
             <span>{formatDate(post.date)}</span>
             <span>·</span>
+            <span>{formatViews(post.views)} просмотров</span>
+            <span>·</span>
             <span>{post.readingTime} мин чтения</span>
+            <ShareButtons title={post.title} compact />
           </div>
         </div>
       </section>
@@ -82,6 +86,12 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
           <article className="prose" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
 
+          <div className="post-share-block">
+            <ShareButtons title={post.title} />
+          </div>
+
+          <AuthorBox />
+
           <div
             style={{
               marginTop: 56,
@@ -99,6 +109,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               Попробовать бесплатно
             </a>
           </div>
+
+          <Comments comments={post.comments} postTitle={post.title} />
         </div>
       </section>
 
@@ -106,7 +118,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         <section style={{ background: "var(--beige-bg)", paddingBottom: 100 }}>
           <div className="container">
             <h2 style={{ marginBottom: 32, fontSize: "1.6rem", color: "var(--marsh)" }}>
-              Читайте также
+              Похожие статьи
             </h2>
             <div
               style={{

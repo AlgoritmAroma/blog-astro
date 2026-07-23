@@ -3,20 +3,11 @@ import path from "path";
 import matter from "gray-matter";
 import { remark } from "remark";
 import remarkHtml from "remark-html";
+import type { Comment, Post, PostMeta } from "@/lib/blog";
+
+export type { PostMeta, Post, Comment, Category } from "@/lib/blog";
 
 const postsDirectory = path.join(process.cwd(), "src/content/posts");
-
-export type PostMeta = {
-  slug: string;
-  title: string;
-  excerpt: string;
-  date: string;
-  category: string;
-  cover: string;
-  readingTime: number;
-};
-
-export type Post = PostMeta & { contentHtml: string };
 
 function readingTimeFromText(text: string): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
@@ -30,33 +21,7 @@ export function getAllSlugs(): string[] {
     .map((file) => file.replace(/\.md$/, ""));
 }
 
-export function getAllPosts(): PostMeta[] {
-  return getAllSlugs()
-    .map((slug) => {
-      const raw = fs.readFileSync(path.join(postsDirectory, `${slug}.md`), "utf8");
-      const { data, content } = matter(raw);
-      return {
-        slug,
-        title: data.title as string,
-        excerpt: data.excerpt as string,
-        date: data.date as string,
-        category: data.category as string,
-        cover: data.cover as string,
-        readingTime: readingTimeFromText(content),
-      };
-    })
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
-}
-
-export function getAllCategories(): string[] {
-  const categories = new Set(getAllPosts().map((post) => post.category));
-  return Array.from(categories);
-}
-
-export async function getPostBySlug(slug: string): Promise<Post> {
-  const raw = fs.readFileSync(path.join(postsDirectory, `${slug}.md`), "utf8");
-  const { data, content } = matter(raw);
-  const processed = await remark().use(remarkHtml).process(content);
+function metaFromFrontmatter(slug: string, data: Record<string, unknown>, content: string): PostMeta {
   return {
     slug,
     title: data.title as string,
@@ -65,13 +30,40 @@ export async function getPostBySlug(slug: string): Promise<Post> {
     category: data.category as string,
     cover: data.cover as string,
     readingTime: readingTimeFromText(content),
+    views: typeof data.views === "number" ? data.views : 1000,
+  };
+}
+
+export function getAllPosts(): PostMeta[] {
+  return getAllSlugs()
+    .map((slug) => {
+      const raw = fs.readFileSync(path.join(postsDirectory, `${slug}.md`), "utf8");
+      const { data, content } = matter(raw);
+      return metaFromFrontmatter(slug, data, content);
+    })
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+export async function getPostBySlug(slug: string): Promise<Post> {
+  const raw = fs.readFileSync(path.join(postsDirectory, `${slug}.md`), "utf8");
+  const { data, content } = matter(raw);
+  const processed = await remark().use(remarkHtml).process(content);
+  const comments = Array.isArray(data.comments) ? (data.comments as Comment[]) : [];
+  return {
+    ...metaFromFrontmatter(slug, data, content),
     contentHtml: processed.toString(),
+    comments,
   };
 }
 
 export function getRelatedPosts(current: PostMeta, limit = 2): PostMeta[] {
-  return getAllPosts()
-    .filter((post) => post.slug !== current.slug)
-    .sort((a, b) => (a.category === current.category ? -1 : 0) - (b.category === current.category ? -1 : 0))
-    .slice(0, limit);
+  const sameCategory = getAllPosts().filter(
+    (post) => post.slug !== current.slug && post.category === current.category
+  );
+  if (sameCategory.length >= limit) return sameCategory.slice(0, limit);
+
+  const others = getAllPosts().filter(
+    (post) => post.slug !== current.slug && post.category !== current.category
+  );
+  return [...sameCategory, ...others].slice(0, limit);
 }

@@ -1,66 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PostCard from "@/components/PostCard";
-import type { PostMeta } from "@/lib/posts";
+import CategorySidebar from "@/components/CategorySidebar";
+import Pagination from "@/components/Pagination";
+import { getPageCount, paginate, type PostMeta } from "@/lib/blog";
 
-export default function BlogGrid({
-  posts,
-  categories,
-}: {
-  posts: PostMeta[];
-  categories: string[];
-}) {
+const PAGE_SIZE = 20;
+
+export default function BlogGrid({ posts }: { posts: PostMeta[] }) {
   const [active, setActive] = useState<string | null>(null);
-  const filtered = active ? posts.filter((p) => p.category === active) : posts;
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(
+    () => (active ? posts.filter((p) => p.category === active) : posts),
+    [posts, active]
+  );
+  const pageCount = getPageCount(filtered.length, PAGE_SIZE);
+  const pagePosts = paginate(filtered, page, PAGE_SIZE);
+
+  function handleSelectCategory(category: string | null) {
+    setActive(category);
+    setPage(1);
+  }
+
+  function handlePageChange(next: number) {
+    setPage(next);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   return (
-    <>
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          flexWrap: "wrap",
-          marginBottom: 48,
-          justifyContent: "center",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setActive(null)}
-          className={`tag${!active ? " is-active" : ""}`}
-          style={{ cursor: "pointer" }}
-        >
-          Все статьи
-        </button>
-        {categories.map((category) => (
-          <button
-            type="button"
-            key={category}
-            onClick={() => setActive(category)}
-            className={`tag${active === category ? " is-active" : ""}`}
-            style={{ cursor: "pointer" }}
+    <div className="blog-layout">
+      <div>
+        {pagePosts.length > 0 ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+              gap: "48px 32px",
+            }}
           >
-            {category}
-          </button>
-        ))}
+            {pagePosts.map((post) => (
+              <PostCard key={post.slug} post={post} />
+            ))}
+          </div>
+        ) : (
+          <p style={{ textAlign: "center", opacity: 0.6 }}>Пока нет статей в этой рубрике.</p>
+        )}
+
+        <Pagination page={page} pageCount={pageCount} onChange={handlePageChange} />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-          gap: "48px 32px",
-        }}
-      >
-        {filtered.map((post) => (
-          <PostCard key={post.slug} post={post} />
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <p style={{ textAlign: "center", opacity: 0.6 }}>Пока нет статей в этой категории.</p>
-      )}
-    </>
+      <CategorySidebar active={active} onSelect={handleSelectCategory} />
+    </div>
   );
 }
