@@ -6,36 +6,31 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import ShareButtons from "@/components/ShareButtons";
 import AuthorBox from "@/components/AuthorBox";
 import Comments from "@/components/Comments";
-import { getAllPosts, getAllSlugs, getPostBySlug, getRelatedPosts } from "@/lib/posts";
-import { withBasePath } from "@/lib/basePath";
+import ViewTracker from "@/components/ViewTracker";
+import { getPostBySlug, getRelatedPosts } from "@/lib/posts";
 import { formatDate, formatViews } from "@/lib/format";
-
-export function generateStaticParams() {
-  return getAllSlugs().map((slug) => ({ slug }));
-}
+import { submitCommentAction } from "./actions";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const posts = getAllPosts();
-  const meta = posts.find((p) => p.slug === slug);
-  if (!meta) return {};
+  const post = await getPostBySlug(slug);
+  if (!post) return {};
   return {
-    title: meta.title,
-    description: meta.excerpt,
+    title: post.title,
+    description: post.excerpt,
   };
 }
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const posts = getAllPosts();
-  const meta = posts.find((p) => p.slug === slug);
-  if (!meta) return notFound();
-
   const post = await getPostBySlug(slug);
-  const related = getRelatedPosts(meta);
+  if (!post) return notFound();
+
+  const related = await getRelatedPosts(post);
 
   return (
     <>
+      <ViewTracker slug={post.slug} />
       <section style={{ padding: "24px 0 56px" }}>
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
           <Breadcrumbs
@@ -75,13 +70,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               maxWidth: 640,
             }}
           >
-            <Image
-              src={withBasePath(post.cover)}
-              alt={post.title}
-              fill
-              sizes="640px"
-              style={{ objectFit: "cover" }}
-            />
+            <Image src={post.cover} alt={post.title} fill sizes="640px" style={{ objectFit: "cover" }} />
           </div>
 
           <article className="prose" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
@@ -110,7 +99,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             </a>
           </div>
 
-          <Comments comments={post.comments} postTitle={post.title} />
+          <Comments comments={post.comments} action={submitCommentAction.bind(null, post.id)} />
         </div>
       </section>
 

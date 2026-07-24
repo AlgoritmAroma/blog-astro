@@ -1,15 +1,12 @@
 import type { NextConfig } from "next";
 
-const basePath = process.env.GITHUB_PAGES === "true" ? "/blog-astro" : "";
-
 const nextConfig: NextConfig = {
-  output: "export",
-  basePath,
-  assetPrefix: basePath ? `${basePath}/` : undefined,
-  trailingSlash: true,
-  images: { unoptimized: true },
-  env: {
-    NEXT_PUBLIC_BASE_PATH: basePath,
+  output: "standalone",
+  experimental: {
+    serverActions: {
+      // Default is 1MB — too small for a real cover-image upload.
+      bodySizeLimit: "10mb",
+    },
   },
 };
 

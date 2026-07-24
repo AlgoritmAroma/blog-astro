@@ -1,38 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState } from "react";
 import type { Comment } from "@/lib/blog";
 import { formatDate } from "@/lib/format";
+import type { CommentFormState } from "@/app/blog/[slug]/actions";
 
-const MODERATION_EMAIL = "info@aiastro.ru";
+const initialState: CommentFormState = { status: "idle" };
 
 export default function Comments({
   comments,
-  postTitle,
+  action,
 }: {
   comments: Comment[];
-  postTitle: string;
+  action: (prevState: CommentFormState, formData: FormData) => Promise<CommentFormState>;
 }) {
-  const [name, setName] = useState("");
-  const [text, setText] = useState("");
-  const [sent, setSent] = useState(false);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || !text.trim()) return;
-
-    const subject = `Новый комментарий к статье: ${postTitle}`;
-    const body = `Имя: ${name}\n\nКомментарий:\n${text}\n\nСтраница: ${
-      typeof window !== "undefined" ? window.location.href : ""
-    }`;
-    window.location.href = `mailto:${MODERATION_EMAIL}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(body)}`;
-
-    setSent(true);
-    setName("");
-    setText("");
-  }
+  const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
     <div className="comments">
@@ -42,8 +24,8 @@ export default function Comments({
         <p className="comments__empty">Пока нет комментариев — станьте первым.</p>
       ) : (
         <ul className="comments__list">
-          {comments.map((c, i) => (
-            <li key={i} className="comments__item">
+          {comments.map((c) => (
+            <li key={c.id} className="comments__item">
               <div className="comments__item-head">
                 <span className="comments__item-name">{c.name}</span>
                 <span className="comments__item-date">{formatDate(c.date)}</span>
@@ -54,34 +36,23 @@ export default function Comments({
         </ul>
       )}
 
-      <form className="comments__form" onSubmit={handleSubmit}>
+      <form className="comments__form" action={formAction}>
         <p className="comments__form-note">
           Комментарии проходят модерацию — публикуются после проверки.
         </p>
-        <input
-          type="text"
-          placeholder="Ваше имя"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className="comments__input"
-        />
+        <input type="text" name="name" placeholder="Ваше имя" required className="comments__input" />
         <textarea
+          name="text"
           placeholder="Ваш комментарий"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
           required
           rows={4}
           className="comments__textarea"
         />
-        <button type="submit" className="btn btn-outline">
-          Отправить на модерацию
+        <button type="submit" className="btn btn-outline" disabled={pending}>
+          {pending ? "Отправка…" : "Отправить на модерацию"}
         </button>
-        {sent && (
-          <p className="comments__sent">
-            Откроется письмо для отправки комментария редакции — после проверки он появится здесь.
-          </p>
-        )}
+        {state.status === "success" && <p className="comments__sent">{state.message}</p>}
+        {state.status === "error" && <p className="comments__error">{state.message}</p>}
       </form>
     </div>
   );

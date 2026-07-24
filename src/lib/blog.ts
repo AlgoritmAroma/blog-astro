@@ -17,13 +17,18 @@ export const ALL_CATEGORIES = [
 
 export type Category = (typeof ALL_CATEGORIES)[number];
 
+export type CommentStatus = "pending" | "approved" | "rejected";
+
 export type Comment = {
+  id: number;
   name: string;
   date: string;
   text: string;
+  status: CommentStatus;
 };
 
 export type PostMeta = {
+  id: number;
   slug: string;
   title: string;
   excerpt: string;

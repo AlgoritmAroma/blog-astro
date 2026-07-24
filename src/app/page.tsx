@@ -10,8 +10,8 @@ export const metadata: Metadata = {
     "Полезные статьи об астрологии, натальных картах, совместимости партнеров, знаках зодиака и астрологических прогнозах. Читайте экспертные материалы, рекомендации и ответы на популярные вопросы от AI Astro для самопознания и принятия важных жизненных решений.",
 };
 
-export default function BlogHome() {
-  const posts = getAllPosts();
+export default async function BlogHome() {
+  const posts = await getAllPosts();
 
   return (
     <>

@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { PostMeta } from "@/lib/blog";
-import { withBasePath } from "@/lib/basePath";
 import { formatDate, formatViews } from "@/lib/format";
 
 export default function PostCard({ post }: { post: PostMeta }) {
@@ -17,7 +16,7 @@ export default function PostCard({ post }: { post: PostMeta }) {
           }}
         >
           <Image
-            src={withBasePath(post.cover)}
+            src={post.cover}
             alt={post.title}
             fill
             sizes="(max-width: 720px) 100vw, 360px"

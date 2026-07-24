@@ -33,6 +33,12 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# sqlite db + uploaded cover images (persisted via Docker volumes in prod,
+# not meant to live in git)
+/data/
+/public/uploads/*
+!/public/uploads/.gitkeep
+
 # vercel
 .vercel
 
