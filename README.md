@@ -4,73 +4,62 @@
 сайтом: тёмный фон, золотой акцент `#b8844c`, шрифты Anticva (заголовки) и Involve (текст),
 арочные карточки-«окна» в духе церковной готики.
 
-Next.js (App Router) со статическим экспортом (`output: "export"`) — сайт полностью
-статический и деплоится на GitHub Pages через Actions.
+Next.js (App Router), `output: "standalone"` — полноценный Node-сервер (не статический
+экспорт): Postgres-БД, авторизация, админ-панель со своим CRUD статей, модерация
+комментариев, API-роуты. Деплоится Docker-контейнером на VPS.
 
 ## Разработка
 
+Нужен реальный Postgres — проще всего поднять только `db`-сервис из compose:
+
 ```bash
 npm install
+cp .env.production.sample .env.production   # заполнить POSTGRES_PASSWORD (и остальное)
+docker compose up -d db                     # postgres на localhost:5432
+cp .env.production.sample .env.local        # заполнить ADMIN_PASSWORD_HASH и SESSION_SECRET
+npm run db:seed                             # разово: заполнить БД исходными статьями
 npm run dev
 ```
 
-Открыть [http://localhost:3000](http://localhost:3000).
+Открыть [http://localhost:3000](http://localhost:3000), админка — на `/admin/login`.
 
-## Как добавить новую статью
+Важно про `.env.local`: Next грузит его через `dotenv-expand`, который воспринимает `$`
+как начало подстановки переменной. Bcrypt-хэш всегда содержит `$` (`$2b$10$...`) — каждый
+`$` в нём нужно экранировать как `\$`, иначе хэш молча обрежется и логин не сработает
+никогда (без явной ошибки). Пример — см. закомментированный экземпляр в `.env.local`.
+(В `.env.production`, который читает Docker Compose через `env_file:`, экранировать не
+нужно — там нет никакой подстановки переменных, значения передаются как есть.)
 
-Каждая статья — markdown-файл в `src/content/posts/*.md` с frontmatter:
+## Как добавлять статьи
 
-```md
----
-title: "Заголовок статьи"
-excerpt: "Короткое описание для карточки и меты."
-date: "2026-07-22"
-category: "Прогнозы" # Натальная карта / Совместимость / Прогнозы / Общее (или новая)
-cover: "/images/prediction.png" # путь к обложке из /public
----
+Основной способ — через админку: `/admin/posts/new` (нужен вход через `/admin/login`).
+Там же редактирование (`/admin/posts/[id]/edit`) и модерация комментариев
+(`/admin/comments`).
 
-Текст статьи в Markdown.
-```
+`scripts/seed.ts` (`npm run db:seed`) — идемпотентный скрипт миграции: переносит статьи из
+`src/content/posts/*.md` в БД (уже существующие slug'и пропускает). Нужен один раз на
+свежей БД (локальной или на VPS) — на непустой безопасно перезапускать.
 
-Сборка сама подхватит новый файл — отдельный слаг генерируется из имени файла
-(`retrogradny-merkuriy.md` → `/blog/retrogradny-merkuriy/`).
-
-## Сборка и локальный статический предпросмотр
+## Деплой (Docker на VPS)
 
 ```bash
-npm run build       # создаёт статический сайт в ./out
-npx serve out        # или любой статический сервер
-```
-
-## Деплой
-
-### GitHub Pages
-
-Пуш в `main` автоматически собирает и публикует сайт на GitHub Pages через
-`.github/workflows/deploy.yml`. Убедитесь, что в настройках репозитория
-(Settings → Pages → Source) выбрано **GitHub Actions**.
-
-`next.config.ts` подставляет `basePath: "/blog-astro"` только когда в окружении есть
-`GITHUB_PAGES=true` (workflow выставляет её сам) — локальный `npm run dev`/`npm run build`
-работает без basePath.
-
-### Docker (self-hosted / VPS)
-
-Multi-stage сборка: статический экспорт Next.js собирается в node-контейнере, а
-раздаётся через `nginx:alpine`. `GITHUB_PAGES` внутри Docker-сборки не выставляется,
-поэтому сайт раздаётся с корня домена (без `/blog-astro`).
-
-```bash
+cp .env.production.sample .env.production   # заполнить реальные значения
 docker compose up -d --build
+npm run db:seed   # разово, на своей машине с DATABASE_URL, указывающим на прод-БД
+                   # (или через `docker compose exec blog npx tsx scripts/seed.ts`)
 ```
 
-Сайт поднимется на [http://localhost:8080](http://localhost:8080) (порт задаётся в
-`docker-compose.yml`). Либо вручную:
+Сайт поднимется на [http://localhost:8080](http://localhost:8080) (порт — в
+`docker-compose.yml`). БД (сервис `db`, `postgres:16-alpine`) и `public/uploads/`
+(обложки статей) — volume-ы; без них любой передеплой стирал бы данные и загруженные
+картинки.
 
-```bash
-docker build -t astro-ai-blog .
-docker run -d -p 8080:80 --name astro-ai-blog astro-ai-blog
-```
+На VPS перед контейнером должен стоять свой реверс-прокси (nginx/Caddy) для TLS — этот
+`docker-compose.yml` его не поднимает, только приложение (3000/8080) и БД.
+
+Образ приложения собирается на `node:22-slim` — не Alpine: `sharp` в этом проекте
+установлен только с glibc-биндингом (без musl-варианта), на Alpine он не загрузится.
+`pg` (драйвер БД) — чистый JS, к выбору базового образа отношения не имеет.
 
 ## Шрифты и изображения
 

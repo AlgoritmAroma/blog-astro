@@ -6,18 +6,18 @@ import { setCommentStatus, deleteComment } from "@/lib/comments";
 
 export async function approveCommentAction(id: number): Promise<void> {
   await requireAdmin();
-  setCommentStatus(id, "approved");
+  await setCommentStatus(id, "approved");
   revalidatePath("/admin/comments");
 }
 
 export async function rejectCommentAction(id: number): Promise<void> {
   await requireAdmin();
-  setCommentStatus(id, "rejected");
+  await setCommentStatus(id, "rejected");
   revalidatePath("/admin/comments");
 }
 
 export async function deleteCommentAction(id: number): Promise<void> {
   await requireAdmin();
-  deleteComment(id);
+  await deleteComment(id);
   revalidatePath("/admin/comments");
 }

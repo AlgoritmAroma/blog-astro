@@ -1,6 +1,38 @@
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    ports:
+      # Bound to localhost only — lets `npm run dev` outside Docker reach it
+      # for local work, without exposing postgres on the VPS's public IP.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   blog:
     build: .
     ports:
-      - "8080:80"
+      - "8080:3000"
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      # Real secrets on the VPS — not committed. Copy .env.production.sample,
+      # fill in real values (see that file for how to generate each one).
+      - .env.production
+    volumes:
+      # Without this, `docker compose up --build` on every redeploy would
+      # wipe every uploaded cover image (the DB itself lives in the `db`
+      # service's own `pgdata` volume above, already persisted separately).
+      - ./public/uploads:/app/public/uploads
+
+volumes:
+  pgdata:

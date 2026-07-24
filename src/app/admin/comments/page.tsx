@@ -25,7 +25,7 @@ export default async function AdminCommentsPage({
 }) {
   const { status } = await searchParams;
   const activeStatus = (status ?? "all") as CommentStatus | "all";
-  const comments = getAllComments(activeStatus === "all" ? undefined : (activeStatus as CommentStatus));
+  const comments = await getAllComments(activeStatus === "all" ? undefined : (activeStatus as CommentStatus));
 
   return (
     <>

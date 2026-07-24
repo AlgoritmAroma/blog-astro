@@ -67,7 +67,8 @@ async function resolveCover(
 }
 
 function isUniqueViolation(err: unknown): boolean {
-  return err instanceof Error && err.message.includes("UNIQUE");
+  // Postgres SQLSTATE 23505 = unique_violation.
+  return typeof err === "object" && err !== null && (err as { code?: string }).code === "23505";
 }
 
 export async function createPostAction(_prevState: PostFormState, formData: FormData): Promise<PostFormState> {
@@ -92,7 +93,7 @@ export async function createPostAction(_prevState: PostFormState, formData: Form
 
   let id: number;
   try {
-    id = createPost(input);
+    id = await createPost(input);
   } catch (err) {
     if (isUniqueViolation(err)) return { error: `Статья со slug "${fields.slug}" уже существует.` };
     throw err;
@@ -108,7 +109,7 @@ export async function updatePostAction(
 ): Promise<PostFormState> {
   await requireAdmin();
 
-  const existing = getPostById(id);
+  const existing = await getPostById(id);
   if (!existing) return { error: "Статья не найдена." };
 
   const fields = parseFields(formData);
@@ -129,7 +130,7 @@ export async function updatePostAction(
   };
 
   try {
-    updatePost(id, input);
+    await updatePost(id, input);
   } catch (err) {
     if (isUniqueViolation(err)) return { error: `Статья со slug "${fields.slug}" уже существует.` };
     throw err;
@@ -140,6 +141,6 @@ export async function updatePostAction(
 
 export async function deletePostAction(id: number): Promise<void> {
   await requireAdmin();
-  deletePost(id);
+  await deletePost(id);
   redirect("/admin/posts");
 }

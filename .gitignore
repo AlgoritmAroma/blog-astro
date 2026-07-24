@@ -32,10 +32,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.production.sample
 
-# sqlite db + uploaded cover images (persisted via Docker volumes in prod,
-# not meant to live in git)
-/data/
+# uploaded cover images (persisted via a Docker volume in prod, not meant to
+# live in git — the DB itself is postgres now, in its own volume, nothing to
+# ignore here for it)
 /public/uploads/*
 !/public/uploads/.gitkeep
 

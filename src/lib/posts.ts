@@ -2,7 +2,7 @@ import "server-only";
 import { connection } from "next/server";
 import { remark } from "remark";
 import remarkHtml from "remark-html";
-import { db } from "@/lib/db";
+import { query, toNumber } from "@/lib/db";
 import { getApprovedComments } from "@/lib/comments";
 import type { Post, PostMeta } from "@/lib/blog";
 
@@ -42,17 +42,18 @@ function rowToMeta(row: PostRow): PostMeta {
 /** Public-facing: all posts, newest first. Forces dynamic rendering (see
  * comment on `connection()` below) so admin edits show up without a rebuild. */
 export async function getAllPosts(): Promise<PostMeta[]> {
-  // better-sqlite3 reads are synchronous and don't count as a Next.js
-  // "dynamic API" on their own, so without this, `next build` would bake
-  // this page's output into static HTML once and never touch the DB again.
+  // A plain DB read doesn't count as a Next.js "dynamic API" on its own, so
+  // without this, `next build` would bake this page's output into static
+  // HTML once and never touch the DB again.
   await connection();
-  const rows = db.prepare(`SELECT * FROM posts ORDER BY published_at DESC`).all() as PostRow[];
+  const rows = await query<PostRow>(`SELECT * FROM posts ORDER BY published_at DESC`);
   return rows.map(rowToMeta);
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
   await connection();
-  const row = db.prepare(`SELECT * FROM posts WHERE slug = ?`).get(slug) as PostRow | undefined;
+  const rows = await query<PostRow>(`SELECT * FROM posts WHERE slug = $1`, [slug]);
+  const row = rows[0];
   if (!row) return null;
 
   const processed = await remark().use(remarkHtml).process(row.content);
@@ -60,7 +61,7 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
   return {
     ...rowToMeta(row),
     contentHtml: processed.toString(),
-    comments: getApprovedComments(row.id),
+    comments: await getApprovedComments(row.id),
   };
 }
 
@@ -74,8 +75,8 @@ export async function getRelatedPosts(current: PostMeta, limit = 2): Promise<Pos
   return [...sameCategory, ...others].slice(0, limit);
 }
 
-export function incrementViews(slug: string): void {
-  db.prepare(`UPDATE posts SET views = views + 1 WHERE slug = ?`).run(slug);
+export async function incrementViews(slug: string): Promise<void> {
+  await query(`UPDATE posts SET views = views + 1 WHERE slug = $1`, [slug]);
 }
 
 // ---------- admin-only CRUD (called from Server Actions, already
@@ -92,8 +93,9 @@ export type PostInput = {
   views: number;
 };
 
-export function getPostById(id: number): (PostInput & { id: number }) | null {
-  const row = db.prepare(`SELECT * FROM posts WHERE id = ?`).get(id) as PostRow | undefined;
+export async function getPostById(id: number): Promise<(PostInput & { id: number }) | null> {
+  const rows = await query<PostRow>(`SELECT * FROM posts WHERE id = $1`, [id]);
+  const row = rows[0];
   if (!row) return null;
   return {
     id: row.id,
@@ -108,28 +110,40 @@ export function getPostById(id: number): (PostInput & { id: number }) | null {
   };
 }
 
-export function createPost(input: PostInput): number {
-  const result = db
-    .prepare(
-      `INSERT INTO posts (slug, title, excerpt, content, category, cover, published_at, views)
-       VALUES (@slug, @title, @excerpt, @content, @category, @cover, @publishedAt, @views)`
-    )
-    .run(input);
-  return Number(result.lastInsertRowid);
+export async function createPost(input: PostInput): Promise<number> {
+  const rows = await query<{ id: number }>(
+    `INSERT INTO posts (slug, title, excerpt, content, category, cover, published_at, views)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING id`,
+    [input.slug, input.title, input.excerpt, input.content, input.category, input.cover, input.publishedAt, input.views]
+  );
+  return rows[0].id;
 }
 
-export function updatePost(id: number, input: PostInput): void {
-  db.prepare(
-    `UPDATE posts SET slug=@slug, title=@title, excerpt=@excerpt, content=@content,
-     category=@category, cover=@cover, published_at=@publishedAt, views=@views,
-     updated_at=datetime('now') WHERE id=@id`
-  ).run({ ...input, id });
+export async function updatePost(id: number, input: PostInput): Promise<void> {
+  await query(
+    `UPDATE posts SET slug=$1, title=$2, excerpt=$3, content=$4,
+     category=$5, cover=$6, published_at=$7, views=$8, updated_at=now()
+     WHERE id=$9`,
+    [
+      input.slug,
+      input.title,
+      input.excerpt,
+      input.content,
+      input.category,
+      input.cover,
+      input.publishedAt,
+      input.views,
+      id,
+    ]
+  );
 }
 
-export function deletePost(id: number): void {
-  db.prepare(`DELETE FROM posts WHERE id = ?`).run(id);
+export async function deletePost(id: number): Promise<void> {
+  await query(`DELETE FROM posts WHERE id = $1`, [id]);
 }
 
-export function countPosts(): number {
-  return (db.prepare(`SELECT COUNT(*) as n FROM posts`).get() as { n: number }).n;
+export async function countPosts(): Promise<number> {
+  const rows = await query<{ n: string }>(`SELECT COUNT(*) as n FROM posts`);
+  return toNumber(rows[0].n);
 }

@@ -22,6 +22,6 @@ export async function submitCommentAction(
     return { status: "error", message: "Слишком длинный текст." };
   }
 
-  submitComment(postId, name, text);
+  await submitComment(postId, name, text);
   return { status: "success", message: "Спасибо! Комментарий отправлен на модерацию и появится после проверки." };
 }

@@ -6,7 +6,7 @@ import { updatePostAction } from "../../actions";
 export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const postId = Number(id);
-  const post = Number.isFinite(postId) ? getPostById(postId) : null;
+  const post = Number.isFinite(postId) ? await getPostById(postId) : null;
   if (!post) notFound();
 
   return (

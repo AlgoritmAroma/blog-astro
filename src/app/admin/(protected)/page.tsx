@@ -3,8 +3,8 @@ import { countPosts } from "@/lib/posts";
 import { countPendingComments } from "@/lib/comments";
 
 export default async function AdminDashboard() {
-  const postCount = countPosts();
-  const pendingCount = countPendingComments();
+  const postCount = await countPosts();
+  const pendingCount = await countPendingComments();
 
   return (
     <>
