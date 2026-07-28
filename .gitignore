@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -14,11 +14,11 @@
 /coverage
 
 # next.js
-/.next/
-/out/
+.next/
+out/
 
 # production
-/build
+build/
 
 # misc
 .DS_Store
@@ -34,11 +34,14 @@ yarn-error.log*
 .env*
 !.env.production.sample
 
-# uploaded cover images (persisted via a Docker volume in prod, not meant to
-# live in git — the DB itself is postgres now, in its own volume, nothing to
-# ignore here for it)
-/public/uploads/*
-!/public/uploads/.gitkeep
+# uploaded cover images — persisted via a shared Docker volume in prod (see
+# docker-compose.yml), not meant to live in git. Applies inside both apps
+# (each app's own public/uploads is what Next serves from in dev mode) and
+# the shared top-level ./uploads used as the volume mount source.
+apps/*/public/uploads/*
+!apps/*/public/uploads/.gitkeep
+/uploads/*
+!/uploads/.gitkeep
 
 # vercel
 .vercel

@@ -16,8 +16,10 @@ services:
       timeout: 5s
       retries: 10
 
+  # Public site. Put your reverse proxy's main-domain vhost (aiastro.ru) in
+  # front of this service's port — no IP/VPN restriction needed here.
   blog:
-    build: .
+    build: ./apps/blog
     ports:
       - "8080:3000"
     restart: unless-stopped
@@ -27,12 +29,32 @@ services:
     env_file:
       # Real secrets on the VPS — not committed. Copy .env.production.sample,
       # fill in real values (see that file for how to generate each one).
+      # blog ignores the ADMIN_*/SESSION_SECRET vars meant for admin below.
       - .env.production
     volumes:
-      # Without this, `docker compose up --build` on every redeploy would
-      # wipe every uploaded cover image (the DB itself lives in the `db`
-      # service's own `pgdata` volume above, already persisted separately).
-      - ./public/uploads:/app/public/uploads
+      # Shared with `admin` below — admin writes cover images here, blog
+      # serves them. Without this, `docker compose up --build` on every
+      # redeploy would also wipe every uploaded cover image (the DB itself
+      # lives in the `db` service's own `pgdata` volume, persisted separately).
+      - ./uploads:/app/public/uploads
+
+  # CMS. Same Postgres as `blog`, but a separate process/container — this is
+  # the actual point of the split (see README). Put this behind its own
+  # subdomain (e.g. admin.aiastro.ru) in the reverse proxy, restricted by
+  # IP-allowlist or VPN — a login page reachable from the whole internet is
+  # the thing we're trying to avoid here, not just the URL being guessable.
+  admin:
+    build: ./apps/admin
+    ports:
+      - "8081:3000"
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.production
+    volumes:
+      - ./uploads:/app/public/uploads
 
 volumes:
   pgdata:

@@ -1,0 +1,219 @@
+/* Deliberately plain/functional, not the public site's gothic-arch
+   aesthetic — this is a single-owner internal tool, readability for
+   tables/forms matters more than brand polish here. Self-contained (no
+   shared tokens with the blog app — they're separate deploys). */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.admin-shell {
+  min-height: 100vh;
+  background: #f5f2ec;
+  color: #1a1410;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 32px;
+  background: #1a1410;
+  color: #f5f2ec;
+}
+
+.admin-header a {
+  color: #f5f2ec;
+  text-decoration: none;
+}
+
+.admin-header a:hover {
+  opacity: 0.8;
+}
+
+.admin-header nav {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.admin-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.admin-card {
+  background: #fff;
+  border: 1px solid #e4ddd0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.admin-grid-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.admin-stat-num {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.admin-stat-label {
+  font-size: 0.85rem;
+  opacity: 0.65;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e4ddd0;
+  font-size: 0.9rem;
+  vertical-align: top;
+}
+
+.admin-table th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.admin-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.admin-form-field label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.admin-input,
+.admin-textarea,
+.admin-select {
+  padding: 10px 12px;
+  border: 1px solid #d8cfc0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #1a1410;
+}
+
+.admin-textarea {
+  resize: vertical;
+}
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+  background: #b8844c;
+  color: #1a1410;
+  font-family: inherit;
+}
+
+.admin-btn:hover {
+  background: rgba(184, 132, 76, 0.8);
+}
+
+.admin-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.admin-btn-danger {
+  background: #c0392b;
+  color: #fff;
+}
+
+.admin-btn-danger:hover {
+  background: #a5301f;
+}
+
+.admin-btn-ghost {
+  background: transparent;
+  border: 1px solid #d8cfc0;
+  color: #1a1410;
+}
+
+.admin-btn-ghost:hover {
+  background: #ece5d6;
+}
+
+.admin-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.admin-badge-pending {
+  background: #fdf0d5;
+  color: #a15c00;
+}
+
+.admin-badge-approved {
+  background: #e3f3e1;
+  color: #2f7a3a;
+}
+
+.admin-badge-rejected {
+  background: #fbe4e1;
+  color: #a12b1f;
+}
+
+.admin-login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1410;
+}
+
+.admin-login-box {
+  width: 100%;
+  max-width: 360px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.admin-error {
+  color: #c0392b;
+  font-size: 0.85rem;
+  margin-top: 12px;
+}
