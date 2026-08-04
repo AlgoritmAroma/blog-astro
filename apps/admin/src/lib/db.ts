@@ -28,10 +28,23 @@ if (process.env.NODE_ENV !== "production") {
 
 let schemaReady: Promise<void> | undefined;
 
-function initSchema(): Promise<void> {
-  return pool
-    .query(
-      `
+/** The 8 rubrics the blog shipped with. They're seeded as ordinary rows now
+ * rather than hardcoded in the app, so an editor can add their own — these
+ * just guarantee a fresh database isn't empty. */
+const DEFAULT_CATEGORIES = [
+  "Натальная карта",
+  "Совместимость",
+  "Астрологические прогнозы",
+  "Знаки зодиака",
+  "Любовь и отношения",
+  "Самопознание",
+  "Ведическая астрология",
+  "Планеты и их влияние",
+];
+
+async function initSchema(): Promise<void> {
+  await pool.query(
+    `
       CREATE TABLE IF NOT EXISTS posts (
         id SERIAL PRIMARY KEY,
         slug TEXT UNIQUE NOT NULL,
@@ -54,9 +67,38 @@ function initSchema(): Promise<void> {
         status TEXT NOT NULL DEFAULT 'pending',
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
+
+      CREATE TABLE IF NOT EXISTS categories (
+        id SERIAL PRIMARY KEY,
+        name TEXT UNIQUE NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 100,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+
+      -- Structured article body from the block editor. NULL on posts written
+      -- before it existed — those keep rendering from the markdown in
+      -- posts.content, which stays the plain-text mirror either way.
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS blocks JSONB;
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS bg_color TEXT;
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS cover_alt TEXT;
       `
-    )
-    .then(() => undefined);
+  );
+
+  await pool.query(
+    `INSERT INTO categories (name, sort_order)
+     SELECT name, ordinality::int
+     FROM unnest($1::text[]) WITH ORDINALITY AS seed(name, ordinality)
+     ON CONFLICT (name) DO NOTHING`,
+    [DEFAULT_CATEGORIES]
+  );
+
+  // Any rubric an existing post already uses becomes a real row too, so the
+  // sidebar can't lose a category that has articles in it.
+  await pool.query(
+    `INSERT INTO categories (name)
+     SELECT DISTINCT category FROM posts WHERE category <> ''
+     ON CONFLICT (name) DO NOTHING`
+  );
 }
 
 /** Every query goes through here so the schema-exists check runs at most

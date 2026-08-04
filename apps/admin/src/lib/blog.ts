@@ -2,20 +2,12 @@
 // so client components (BlogGrid, PostCard, CategorySidebar, Comments) can
 // import from this module without pulling Node-only APIs into the browser bundle.
 
-// The 8 fixed rubrics from the blog spec — shown in full in the sidebar
-// regardless of how many posts each currently has.
-export const ALL_CATEGORIES = [
-  "Натальная карта",
-  "Совместимость",
-  "Астрологические прогнозы",
-  "Знаки зодиака",
-  "Любовь и отношения",
-  "Самопознание",
-  "Ведическая астрология",
-  "Планеты и их влияние",
-] as const;
+import type { Block } from "./blocks";
 
-export type Category = (typeof ALL_CATEGORIES)[number];
+// Rubrics used to be a fixed 8-item tuple here. They now live in the
+// `categories` table so an editor can add their own from the admin (the
+// original 8 are seeded in lib/db.ts), which is why this is a plain string.
+export type Category = string;
 
 export type CommentStatus = "pending" | "approved" | "rejected";
 
@@ -35,11 +27,19 @@ export type PostMeta = {
   date: string;
   category: string;
   cover: string;
+  coverAlt: string;
   readingTime: number;
   views: number;
 };
 
-export type Post = PostMeta & { contentHtml: string; comments: Comment[] };
+export type Post = PostMeta & {
+  /** Structured body from the article constructor. Empty for articles that
+   * predate it — those fall back to `contentHtml`. */
+  blocks: Block[];
+  bgColor: string;
+  contentHtml: string;
+  comments: Comment[];
+};
 
 export const PAGE_SIZE = 20;
 

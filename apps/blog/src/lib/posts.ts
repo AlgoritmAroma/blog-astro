@@ -4,6 +4,7 @@ import { remark } from "remark";
 import remarkHtml from "remark-html";
 import { query } from "@/lib/db";
 import { getApprovedComments } from "@/lib/comments";
+import { parseBlocks, DEFAULT_BACKGROUND } from "@/lib/blocks";
 import type { Post, PostMeta } from "@/lib/blog";
 
 export type { PostMeta, Post, Comment, Category, CommentStatus } from "@/lib/blog";
@@ -16,6 +17,9 @@ type PostRow = {
   content: string;
   category: string;
   cover: string;
+  cover_alt: string | null;
+  bg_color: string | null;
+  blocks: unknown;
   published_at: string;
   views: number;
 };
@@ -34,6 +38,7 @@ function rowToMeta(row: PostRow): PostMeta {
     date: row.published_at,
     category: row.category,
     cover: row.cover,
+    coverAlt: row.cover_alt || row.title,
     readingTime: readingTimeFromText(row.content),
     views: row.views,
   };
@@ -56,11 +61,20 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
   const row = rows[0];
   if (!row) return null;
 
-  const processed = await remark().use(remarkHtml).process(row.content);
+  const blocks = parseBlocks(row.blocks);
+
+  // Articles created before the block editor have `blocks` NULL and markdown
+  // in `content` — those keep rendering through remark exactly as before.
+  // Once such an article is re-saved from the admin it gains blocks and this
+  // branch stops being used for it.
+  const contentHtml =
+    blocks.length > 0 ? "" : (await remark().use(remarkHtml).process(row.content)).toString();
 
   return {
     ...rowToMeta(row),
-    contentHtml: processed.toString(),
+    blocks,
+    bgColor: row.bg_color || DEFAULT_BACKGROUND,
+    contentHtml,
     comments: await getApprovedComments(row.id),
   };
 }
