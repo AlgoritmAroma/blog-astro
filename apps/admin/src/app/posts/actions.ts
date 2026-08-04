@@ -2,35 +2,77 @@
 
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/session";
-import { ALL_CATEGORIES, type Category } from "@/lib/blog";
+import { ensureCategory } from "@/lib/categories";
+import {
+  blocksToPlainText,
+  parseBlocksJson,
+  isPageBackground,
+  isCoverPath,
+  stripInlineHtml,
+  DEFAULT_BACKGROUND,
+  type Block,
+} from "@/lib/blocks";
 import { createPost, updatePost, deletePost, getPostById, type PostInput } from "@/lib/posts";
-import { saveCoverImage } from "@/lib/upload";
 import { slugify } from "@/lib/slugify";
 
 export type PostFormState = { error?: string };
 
-function isCategory(value: string): value is Category {
-  return (ALL_CATEGORIES as readonly string[]).includes(value);
-}
+type ParsedFields = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  blocks: Block[];
+  content: string;
+  category: string;
+  publishedAt: string;
+  views: number;
+  cover: string;
+  coverAlt: string;
+  bgColor: string;
+};
 
-type ParsedFields =
-  | { ok: true; slug: string; title: string; excerpt: string; content: string; category: Category; publishedAt: string; views: number }
-  | { ok: false; error: string };
-
-function parseFields(formData: FormData): ParsedFields {
+/**
+ * Everything the client sends is re-validated here — the block payload
+ * arrives as a JSON string built in the browser, so `parseBlocksJson` is both
+ * the schema check and the HTML sanitizer for the article body.
+ */
+async function parseFields(
+  formData: FormData,
+  existingCover?: string
+): Promise<{ ok: true; fields: ParsedFields } | { ok: false; error: string }> {
   const title = String(formData.get("title") ?? "").trim();
   const excerpt = String(formData.get("excerpt") ?? "").trim();
-  const content = String(formData.get("content") ?? "").trim();
-  const category = String(formData.get("category") ?? "").trim();
   const publishedAt = String(formData.get("publishedAt") ?? "").trim();
   const viewsRaw = String(formData.get("views") ?? "").trim();
   const slugRaw = String(formData.get("slug") ?? "").trim();
+  const categoryRaw = String(formData.get("category") ?? "").trim();
+  const bgRaw = String(formData.get("bgColor") ?? "").trim();
+  const coverRaw = String(formData.get("cover") ?? "").trim();
+  const coverAlt = stripInlineHtml(String(formData.get("coverAlt") ?? "").trim()).slice(0, 300);
 
-  if (!title || !excerpt || !content || !publishedAt) {
-    return { ok: false, error: "Заполните все обязательные поля." };
+  if (!title || !excerpt || !publishedAt) {
+    return { ok: false, error: "Заполните заголовок, краткое описание и дату публикации." };
   }
-  if (!isCategory(category)) {
-    return { ok: false, error: "Выберите категорию из списка." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(publishedAt)) {
+    return { ok: false, error: "Дата публикации указана в неверном формате." };
+  }
+
+  const blocks = parseBlocksJson(String(formData.get("blocks") ?? "[]"));
+  if (blocks.length === 0) {
+    return { ok: false, error: "Добавьте хотя бы один блок в тело статьи." };
+  }
+
+  const category = await ensureCategory(categoryRaw);
+  if (!category) {
+    return { ok: false, error: "Выберите категорию или введите название новой." };
+  }
+
+  const cover = coverRaw || existingCover || "";
+  if (!cover) {
+    return { ok: false, error: "Загрузите обложку статьи." };
+  }
+  if (!isCoverPath(cover)) {
+    return { ok: false, error: "Обложка указана неверно — загрузите изображение заново." };
   }
 
   const slug = slugify(slugRaw || title);
@@ -43,27 +85,41 @@ function parseFields(formData: FormData): ParsedFields {
     return { ok: false, error: "Просмотры должны быть неотрицательным числом." };
   }
 
-  return { ok: true, slug, title, excerpt, content, category, publishedAt, views };
+  return {
+    ok: true,
+    fields: {
+      slug,
+      title,
+      excerpt,
+      blocks,
+      // Plain-text mirror of the blocks. Reading-time estimation reads this
+      // column, and it keeps the pre-constructor markdown fallback on the
+      // blog working off a single source.
+      content: blocksToPlainText(blocks),
+      category,
+      publishedAt,
+      views,
+      cover,
+      coverAlt,
+      bgColor: isPageBackground(bgRaw) ? bgRaw : DEFAULT_BACKGROUND,
+    },
+  };
 }
 
-async function resolveCover(
-  formData: FormData,
-  slugHint: string,
-  existingCover?: string
-): Promise<{ ok: true; cover: string } | { ok: false; error: string }> {
-  const file = formData.get("cover");
-  if (file instanceof File && file.size > 0) {
-    if (!file.type.startsWith("image/")) {
-      return { ok: false, error: "Файл обложки должен быть изображением." };
-    }
-    try {
-      return { ok: true, cover: await saveCoverImage(file, slugHint) };
-    } catch {
-      return { ok: false, error: "Не удалось обработать изображение обложки — проверьте файл." };
-    }
-  }
-  if (existingCover) return { ok: true, cover: existingCover };
-  return { ok: false, error: "Загрузите обложку статьи." };
+function toInput(fields: ParsedFields): PostInput {
+  return {
+    slug: fields.slug,
+    title: fields.title,
+    excerpt: fields.excerpt,
+    content: fields.content,
+    blocks: fields.blocks,
+    category: fields.category,
+    cover: fields.cover,
+    coverAlt: fields.coverAlt,
+    bgColor: fields.bgColor,
+    publishedAt: fields.publishedAt,
+    views: fields.views,
+  };
 }
 
 function isUniqueViolation(err: unknown): boolean {
@@ -74,28 +130,14 @@ function isUniqueViolation(err: unknown): boolean {
 export async function createPostAction(_prevState: PostFormState, formData: FormData): Promise<PostFormState> {
   await requireAdmin();
 
-  const fields = parseFields(formData);
-  if (!fields.ok) return { error: fields.error };
-
-  const cover = await resolveCover(formData, fields.slug);
-  if (!cover.ok) return { error: cover.error };
-
-  const input: PostInput = {
-    slug: fields.slug,
-    title: fields.title,
-    excerpt: fields.excerpt,
-    content: fields.content,
-    category: fields.category,
-    cover: cover.cover,
-    publishedAt: fields.publishedAt,
-    views: fields.views,
-  };
+  const parsed = await parseFields(formData);
+  if (!parsed.ok) return { error: parsed.error };
 
   let id: number;
   try {
-    id = await createPost(input);
+    id = await createPost(toInput(parsed.fields));
   } catch (err) {
-    if (isUniqueViolation(err)) return { error: `Статья со slug "${fields.slug}" уже существует.` };
+    if (isUniqueViolation(err)) return { error: `Статья со slug "${parsed.fields.slug}" уже существует.` };
     throw err;
   }
 
@@ -112,27 +154,13 @@ export async function updatePostAction(
   const existing = await getPostById(id);
   if (!existing) return { error: "Статья не найдена." };
 
-  const fields = parseFields(formData);
-  if (!fields.ok) return { error: fields.error };
-
-  const cover = await resolveCover(formData, fields.slug, existing.cover);
-  if (!cover.ok) return { error: cover.error };
-
-  const input: PostInput = {
-    slug: fields.slug,
-    title: fields.title,
-    excerpt: fields.excerpt,
-    content: fields.content,
-    category: fields.category,
-    cover: cover.cover,
-    publishedAt: fields.publishedAt,
-    views: fields.views,
-  };
+  const parsed = await parseFields(formData, existing.cover);
+  if (!parsed.ok) return { error: parsed.error };
 
   try {
-    await updatePost(id, input);
+    await updatePost(id, toInput(parsed.fields));
   } catch (err) {
-    if (isUniqueViolation(err)) return { error: `Статья со slug "${fields.slug}" уже существует.` };
+    if (isUniqueViolation(err)) return { error: `Статья со slug "${parsed.fields.slug}" уже существует.` };
     throw err;
   }
 

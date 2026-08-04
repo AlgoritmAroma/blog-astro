@@ -852,3 +852,81 @@ h3 {
   color: var(--apricot);
 }
 
+
+/* ---------- article blocks (constructor output) ---------- */
+
+.prose-figure {
+  margin: 2.4em 0;
+}
+
+.prose-figure img {
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  display: block;
+}
+
+.prose-figure figcaption {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  text-align: center;
+  color: var(--brown);
+  opacity: 0.65;
+}
+
+.faq {
+  margin: 2.8em 0;
+  border-top: 1px solid rgba(61, 45, 29, 0.18);
+}
+
+.faq-title {
+  font-size: 1.6rem;
+  color: var(--marsh);
+  margin: 1.4em 0 0.8em;
+}
+
+.faq-item {
+  border-bottom: 1px solid rgba(61, 45, 29, 0.18);
+}
+
+.faq-item summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 18px 40px 18px 0;
+  position: relative;
+  font-weight: 700;
+  color: var(--brown);
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::after {
+  content: "+";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--marsh);
+  transition: transform 0.15s ease;
+}
+
+.faq-item[open] summary::after {
+  content: "−";
+}
+
+.faq-item summary:hover {
+  color: var(--marsh);
+}
+
+.faq-answer {
+  padding: 0 40px 20px 0;
+  opacity: 0.85;
+}
+
+.faq-answer > :last-child {
+  margin-bottom: 0;
+}

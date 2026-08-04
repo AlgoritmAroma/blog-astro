@@ -8,7 +8,7 @@ import { getPageCount, paginate, type PostMeta } from "@/lib/blog";
 
 const PAGE_SIZE = 20;
 
-export default function BlogGrid({ posts }: { posts: PostMeta[] }) {
+export default function BlogGrid({ posts, categories }: { posts: PostMeta[]; categories: string[] }) {
   const [active, setActive] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
@@ -51,7 +51,7 @@ export default function BlogGrid({ posts }: { posts: PostMeta[] }) {
         <Pagination page={page} pageCount={pageCount} onChange={handlePageChange} />
       </div>
 
-      <CategorySidebar active={active} onSelect={handleSelectCategory} />
+      <CategorySidebar active={active} onSelect={handleSelectCategory} categories={categories} />
     </div>
   );
 }

@@ -1,11 +1,13 @@
-import { ALL_CATEGORIES } from "@/lib/blog";
-
 export default function CategorySidebar({
   active,
   onSelect,
+  categories,
 }: {
   active: string | null;
   onSelect: (category: string | null) => void;
+  /** Read from the `categories` table by the page, so rubrics created in the
+   * admin show up here without a code change. */
+  categories: string[];
 }) {
   return (
     <aside className="category-sidebar">
@@ -20,7 +22,7 @@ export default function CategorySidebar({
             Все статьи
           </button>
         </li>
-        {ALL_CATEGORIES.map((category) => (
+        {categories.map((category) => (
           <li key={category}>
             <button
               type="button"

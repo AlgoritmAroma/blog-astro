@@ -3,6 +3,7 @@ import BlogGrid from "@/components/BlogGrid";
 import CloudDivider from "@/components/CloudDivider";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { getAllPosts } from "@/lib/posts";
+import { getCategoryNames } from "@/lib/categories";
 
 export const metadata: Metadata = {
   title: "Блог об астрологии, натальных картах и совместимости — ИИ Astro",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogHome() {
-  const posts = await getAllPosts();
+  const [posts, categories] = await Promise.all([getAllPosts(), getCategoryNames()]);
 
   return (
     <>
@@ -37,7 +38,7 @@ export default async function BlogHome() {
 
       <section style={{ background: "var(--beige-bg)", color: "var(--brown)", paddingBottom: 100 }}>
         <div className="container">
-          <BlogGrid posts={posts} />
+          <BlogGrid posts={posts} categories={categories} />
         </div>
       </section>
     </>

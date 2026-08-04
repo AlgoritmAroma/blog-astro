@@ -6,7 +6,9 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import ShareButtons from "@/components/ShareButtons";
 import AuthorBox from "@/components/AuthorBox";
 import Comments from "@/components/Comments";
+import PostBlocks from "@/components/PostBlocks";
 import ViewTracker from "@/components/ViewTracker";
+import { stripInlineHtml } from "@/lib/blocks";
 import { getPostBySlug, getRelatedPosts } from "@/lib/posts";
 import { formatDate, formatViews } from "@/lib/format";
 import { submitCommentAction } from "./actions";
@@ -28,9 +30,31 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   const related = await getRelatedPosts(post);
 
+  // Google reads FAQ blocks as a rich result. Built from the same sanitized
+  // strings the page renders, flattened to plain text as the spec requires.
+  const faqItems = post.blocks
+    .filter((block) => block.type === "faq")
+    .flatMap((block) => block.items);
+
   return (
     <>
       <ViewTracker slug={post.slug} />
+      {faqItems.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: faqItems.map((item) => ({
+                "@type": "Question",
+                name: item.q,
+                acceptedAnswer: { "@type": "Answer", text: stripInlineHtml(item.a) },
+              })),
+            }),
+          }}
+        />
+      )}
       <section style={{ padding: "24px 0 56px" }}>
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
           <Breadcrumbs
@@ -56,9 +80,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         </div>
       </section>
 
-      <CloudDivider fill="#fbf2e1" />
+      <CloudDivider fill={post.bgColor} />
 
-      <section style={{ background: "var(--beige-bg)", paddingBottom: 96 }}>
+      <section style={{ background: post.bgColor, paddingBottom: 96 }}>
         <div className="container" style={{ maxWidth: 820 }}>
           <div
             className="arch"
@@ -70,10 +94,16 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               maxWidth: 640,
             }}
           >
-            <Image src={post.cover} alt={post.title} fill sizes="640px" style={{ objectFit: "cover" }} />
+            <Image src={post.cover} alt={post.coverAlt} fill sizes="640px" style={{ objectFit: "cover" }} />
           </div>
 
-          <article className="prose" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
+          {/* Articles from the block constructor render structurally; the ones
+              that predate it still come through remark as raw HTML. */}
+          {post.blocks.length > 0 ? (
+            <PostBlocks blocks={post.blocks} />
+          ) : (
+            <article className="prose" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
+          )}
 
           <div className="post-share-block">
             <ShareButtons title={post.title} />
@@ -104,7 +134,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       </section>
 
       {related.length > 0 && (
-        <section style={{ background: "var(--beige-bg)", paddingBottom: 100 }}>
+        <section style={{ background: post.bgColor, paddingBottom: 100 }}>
           <div className="container">
             <h2 style={{ marginBottom: 32, fontSize: "1.6rem", color: "var(--marsh)" }}>
               Похожие статьи
