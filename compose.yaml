@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: postgres:16-alpine
+    container_name: blog-astro-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  blog:
+    image: ghcr.io/algoritmaroma/blog-astro-blog:${IMAGE_TAG:-develop}
+    container_name: blog-astro-blog
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6092:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/public/uploads
+
+  admin:
+    image: ghcr.io/algoritmaroma/blog-astro-admin:${IMAGE_TAG:-develop}
+    container_name: blog-astro-admin
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6093:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/public/uploads
+
+volumes:
+  pgdata:

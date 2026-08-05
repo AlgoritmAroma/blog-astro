@@ -1,0 +1,106 @@
+name: Dev Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      blog:    ${{ steps.filter.outputs.blog }}
+      admin:   ${{ steps.filter.outputs.admin }}
+      compose: ${{ steps.filter.outputs.compose }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            blog:
+              - 'apps/blog/**'
+            admin:
+              - 'apps/admin/**'
+            compose:
+              - 'compose.yaml'
+              - '.github/workflows/**'
+
+  build:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.blog == 'true' || needs.changes.outputs.admin == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build and push blog image
+        if: needs.changes.outputs.blog == 'true'
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}-blog:${{ github.ref_name }}
+        run: |
+          IMAGE=$(echo $IMAGE | tr '[:upper:]' '[:lower:]')
+          echo "Using image name: $IMAGE"
+          docker build -t $IMAGE ./apps/blog
+          docker push $IMAGE
+
+      - name: Build and push admin image
+        if: needs.changes.outputs.admin == 'true'
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}-admin:${{ github.ref_name }}
+        run: |
+          IMAGE=$(echo $IMAGE | tr '[:upper:]' '[:lower:]')
+          echo "Using image name: $IMAGE"
+          docker build -t $IMAGE ./apps/admin
+          docker push $IMAGE
+
+  sync:
+    runs-on: ubuntu-latest
+    needs: [changes, build]
+    if: |
+      always() &&
+      needs.build.result != 'failure' &&
+      (needs.build.result == 'success' || needs.changes.outputs.compose == 'true')
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy compose.yaml to dev server
+        uses: appleboy/scp-action@v0.1.6
+        with:
+          host: ${{ vars.DEV_SERVER_HOST }}
+          username: ${{ vars.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          source: 'compose.yaml'
+          target: ${{ vars.DEV_SERVER_DIR }}/blog/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [changes, build, sync]
+    if: |
+      always() &&
+      needs.build.result != 'failure' &&
+      needs.sync.result  != 'failure' &&
+      needs.sync.result  != 'skipped'
+    steps:
+      - name: Deploy to dev server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ vars.DEV_SERVER_HOST }}
+          username: ${{ vars.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          script: |
+            cat <<EOF > ${{ vars.DEV_SERVER_DIR }}/blog/.env
+            ${{ secrets.DEV_ENV_BLOG }}
+            IMAGE_TAG=${{ github.ref_name }}
+            EOF
+
+            echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            docker-compose -f ${{ vars.DEV_SERVER_DIR }}/blog/compose.yaml pull
+            docker-compose -f ${{ vars.DEV_SERVER_DIR }}/blog/compose.yaml -p blog-astro down
+            docker-compose -f ${{ vars.DEV_SERVER_DIR }}/blog/compose.yaml -p blog-astro up -d
