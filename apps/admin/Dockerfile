@@ -13,10 +13,12 @@ FROM node:22-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# DATABASE_URL just needs to be a syntactically valid postgres URL here —
-# nothing actually connects during build, but src/lib/db.ts throws at import
-# time if the env var is missing at all, which page-data collection hits.
+# DATABASE_URL and SESSION_SECRET just need to be syntactically valid here —
+# nothing actually connects/authenticates during build, but src/lib/db.ts and
+# src/lib/session.ts throw at import time if these are missing, which
+# page-data collection hits (e.g. /posts/[id]/edit).
 ENV DATABASE_URL=postgres://build:build@localhost:5432/build
+ENV SESSION_SECRET=0000000000000000000000000000000000000000000000000000000000000000
 RUN npm run build
 
 FROM node:22-slim AS runner
