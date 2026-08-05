@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ACCEPT_ATTRIBUTE } from "@/lib/upload-constants";
+import { ACCEPT_ATTRIBUTE, MAX_UPLOAD_BYTES } from "@/lib/upload-constants";
 
 /**
  * Uploads an image the moment it is picked and reports back the stored path.
@@ -35,6 +35,15 @@ export default function ImageField({
   const [error, setError] = useState<string | null>(null);
 
   async function upload(file: File) {
+    // Checked here as well as on the server: without it an oversized file is
+    // pushed over the network in full before anything says no, and if a proxy
+    // in front of the app cuts the request short the editor gets a bare
+    // transport error instead of a sentence naming the ceiling.
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setError(`Файл больше ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} МБ — сожмите изображение.`);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
