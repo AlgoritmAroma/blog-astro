@@ -97,7 +97,7 @@ jobs:
           username: ${{ vars.DEV_SERVER_USER }}
           key: ${{ secrets.DEV_SERVER_SSH_KEY }}
           script: |
-            cat <<EOF > ${{ vars.DEV_SERVER_DIR }}/blog/.env
+            cat <<'EOF' > ${{ vars.DEV_SERVER_DIR }}/blog/.env
             ${{ secrets.DEV_ENV_BLOG }}
             IMAGE_TAG=${{ github.ref_name }}
             EOF
