@@ -5,16 +5,18 @@ import BlockEditor, { stripIds, withIds, type EditorBlock } from "@/components/B
 import ImageField from "@/components/ImageField";
 import LeaveGuard from "@/components/LeaveGuard";
 import { PAGE_BACKGROUNDS, DEFAULT_BACKGROUND, type Block } from "@/lib/blocks";
+import { pluralRu } from "@/lib/format";
 import { slugify } from "@/lib/slugify";
 import type { PostFormState } from "./actions";
 
 export type PostFormValues = {
   title: string;
+  metaTitle: string;
   slug: string;
   excerpt: string;
   category: string;
   publishedAt: string;
-  views: number;
+  readingTime: number | null;
   cover: string;
   coverAlt: string;
   bgColor: string;
@@ -24,6 +26,11 @@ export type PostFormValues = {
 const initialState: PostFormState = {};
 
 const NEW_CATEGORY = "__new__";
+
+/** Google truncates the search-result title somewhere around here. Not a
+ * validation limit — an editor may well have a reason to go longer — so the
+ * counter turns amber rather than blocking the save. */
+const META_TITLE_SOFT_LIMIT = 60;
 
 /** Today's date in the *browser's* timezone, as yyyy-mm-dd. The server's
  * timezone is irrelevant here — the editor means "today" as they see it. */
@@ -52,6 +59,7 @@ export default function PostForm({
   const [state, formAction, pending] = useActionState(action, initialState);
 
   const [title, setTitle] = useState(initialValues?.title ?? "");
+  const [metaTitle, setMetaTitle] = useState(initialValues?.metaTitle ?? "");
   const [slug, setSlug] = useState(initialValues?.slug ?? "");
   const [excerpt, setExcerpt] = useState(initialValues?.excerpt ?? "");
   const [category, setCategory] = useState(initialValues?.category ?? "");
@@ -64,7 +72,11 @@ export default function PostForm({
   const [publishedAt, setPublishedAt] = useState(
     () => initialValues?.publishedAt ?? (typeof window === "undefined" ? "" : todayLocal())
   );
-  const [views, setViews] = useState(String(initialValues?.views ?? 1000));
+  // Empty means "estimate it from the text" — the behaviour every article had
+  // before the field existed.
+  const [readingTime, setReadingTime] = useState(
+    initialValues?.readingTime == null ? "" : String(initialValues.readingTime)
+  );
   const [cover, setCover] = useState(initialValues?.cover ?? "");
   const [coverAlt, setCoverAlt] = useState(initialValues?.coverAlt ?? "");
   const [bgColor, setBgColor] = useState(initialValues?.bgColor || DEFAULT_BACKGROUND);
@@ -78,17 +90,31 @@ export default function PostForm({
   const values: PostFormValues = useMemo(
     () => ({
       title,
+      metaTitle,
       slug,
       excerpt,
       category: category === NEW_CATEGORY ? newCategory : category,
       publishedAt,
-      views: Number(views) || 0,
+      readingTime: readingTime.trim() === "" ? null : Number(readingTime) || null,
       cover,
       coverAlt,
       bgColor,
       blocks: stripIds(blocks),
     }),
-    [title, slug, excerpt, category, newCategory, publishedAt, views, cover, coverAlt, bgColor, blocks]
+    [
+      title,
+      metaTitle,
+      slug,
+      excerpt,
+      category,
+      newCategory,
+      publishedAt,
+      readingTime,
+      cover,
+      coverAlt,
+      bgColor,
+      blocks,
+    ]
   );
 
   const serialized = JSON.stringify(values);
@@ -98,11 +124,12 @@ export default function PostForm({
   const [baseline] = useState(() =>
     JSON.stringify({
       title: initialValues?.title ?? "",
+      metaTitle: initialValues?.metaTitle ?? "",
       slug: initialValues?.slug ?? "",
       excerpt: initialValues?.excerpt ?? "",
       category: initialValues?.category ?? "",
       publishedAt: initialValues?.publishedAt ?? (typeof window === "undefined" ? "" : todayLocal()),
-      views: initialValues?.views ?? 1000,
+      readingTime: initialValues?.readingTime ?? null,
       cover: initialValues?.cover ?? "",
       coverAlt: initialValues?.coverAlt ?? "",
       bgColor: initialValues?.bgColor || DEFAULT_BACKGROUND,
@@ -153,11 +180,12 @@ export default function PostForm({
 
   function applyDraft(draft: Draft) {
     setTitle(draft.values.title);
+    setMetaTitle(draft.values.metaTitle ?? "");
     setSlug(draft.values.slug);
     setExcerpt(draft.values.excerpt);
     setCategory(draft.values.category);
     setPublishedAt(draft.values.publishedAt);
-    setViews(String(draft.values.views));
+    setReadingTime(draft.values.readingTime == null ? "" : String(draft.values.readingTime));
     setCover(draft.values.cover);
     setCoverAlt(draft.values.coverAlt);
     setBgColor(draft.values.bgColor || DEFAULT_BACKGROUND);
@@ -222,6 +250,33 @@ export default function PostForm({
         </div>
 
         <div className="admin-form-field">
+          <label htmlFor="metaTitle">Title для поисковика (мета-тег)</label>
+          <input
+            id="metaTitle"
+            name="metaTitle"
+            type="text"
+            className="admin-input"
+            placeholder="Если пусто — берётся заголовок H1"
+            value={metaTitle}
+            onChange={(e) => setMetaTitle(e.target.value)}
+          />
+          <p className="admin-hint">
+            Показывается во вкладке браузера и строкой результата в Google. Идёт целиком, без
+            добавки «— Блог Astro AI».
+            {metaTitle.trim() !== "" && (
+              <>
+                {" "}
+                <span className={metaTitle.length > META_TITLE_SOFT_LIMIT ? "admin-hint-warn" : undefined}>
+                  {metaTitle.length} {pluralRu(metaTitle.length, "символ", "символа", "символов")}
+                  {metaTitle.length > META_TITLE_SOFT_LIMIT &&
+                    ` — длиннее ${META_TITLE_SOFT_LIMIT}, Google скорее всего обрежет`}
+                </span>
+              </>
+            )}
+          </p>
+        </div>
+
+        <div className="admin-form-field">
           <label htmlFor="slug">Slug (необязательно — иначе сгенерируется из заголовка)</label>
           <input
             id="slug"
@@ -246,6 +301,10 @@ export default function PostForm({
             value={excerpt}
             onChange={(e) => setExcerpt(e.target.value)}
           />
+          <p className="admin-hint">
+            Уходит в мета-тег description — это текст под ссылкой в результатах поиска. Он же
+            стоит подписью под карточкой статьи в списке блога.
+          </p>
         </div>
 
         <ImageField
@@ -360,17 +419,24 @@ export default function PostForm({
           </div>
 
           <div className="admin-form-field">
-            <label htmlFor="views">Просмотры (для соц. доказательства)</label>
+            <label htmlFor="readingTime">Время чтения, мин</label>
             <input
-              id="views"
-              name="views"
+              id="readingTime"
+              name="readingTime"
               type="number"
-              min={0}
+              min={1}
+              max={600}
               className="admin-input"
-              value={views}
-              onChange={(e) => setViews(e.target.value)}
+              placeholder="авто"
+              value={readingTime}
+              onChange={(e) => setReadingTime(e.target.value)}
             />
+            <p className="admin-hint">
+              Пусто — считается по тексту статьи (≈180 слов в минуту). Заполнено — показывается
+              ваше число.
+            </p>
           </div>
+
         </div>
 
         <div className="admin-form-actions">

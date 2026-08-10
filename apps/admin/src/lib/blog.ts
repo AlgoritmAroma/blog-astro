@@ -5,8 +5,8 @@
 import type { Block } from "./blocks";
 
 // Rubrics used to be a fixed 8-item tuple here. They now live in the
-// `categories` table so an editor can add their own from the admin (the
-// original 8 are seeded in lib/db.ts), which is why this is a plain string.
+// `categories` table and are created by the editor from the article form as
+// articles need them — nothing is seeded — which is why this is a plain string.
 export type Category = string;
 
 export type CommentStatus = "pending" | "approved" | "rejected";
@@ -23,11 +23,16 @@ export type PostMeta = {
   id: number;
   slug: string;
   title: string;
+  /** SEO <title>. Empty when the editor didn't write a separate one, in which
+   * case the page falls back to `title`. */
+  metaTitle: string;
   excerpt: string;
   date: string;
   category: string;
   cover: string;
   coverAlt: string;
+  /** Whole minutes — the editor's override if they set one, otherwise
+   * estimated from the article text. */
   readingTime: number;
   views: number;
 };
@@ -42,6 +47,12 @@ export type Post = PostMeta & {
 };
 
 export const PAGE_SIZE = 20;
+
+/** Below this the view count is hidden rather than shown. It is a real
+ * counter now, and "3 просмотра" under a fresh article works against the
+ * article — the number only starts saying something once there is something
+ * to say. */
+export const MIN_PUBLIC_VIEWS = 100;
 
 export function getPageCount(total: number, pageSize: number = PAGE_SIZE): number {
   return Math.max(1, Math.ceil(total / pageSize));

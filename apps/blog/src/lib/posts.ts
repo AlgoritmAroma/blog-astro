@@ -13,6 +13,7 @@ type PostRow = {
   id: number;
   slug: string;
   title: string;
+  meta_title: string | null;
   excerpt: string;
   content: string;
   category: string;
@@ -21,6 +22,7 @@ type PostRow = {
   bg_color: string | null;
   blocks: unknown;
   published_at: string;
+  reading_time: number | null;
   views: number;
 };
 
@@ -34,12 +36,15 @@ function rowToMeta(row: PostRow): PostMeta {
     id: row.id,
     slug: row.slug,
     title: row.title,
+    metaTitle: row.meta_title ?? "",
     excerpt: row.excerpt,
     date: row.published_at,
     category: row.category,
     cover: row.cover,
     coverAlt: row.cover_alt || row.title,
-    readingTime: readingTimeFromText(row.content),
+    // The estimate is only a fallback: once the editor puts a number in the
+    // form it wins, and re-editing the body never quietly moves it.
+    readingTime: row.reading_time ?? readingTimeFromText(row.content),
     views: row.views,
   };
 }
@@ -89,6 +94,12 @@ export async function getRelatedPosts(current: PostMeta, limit = 2): Promise<Pos
   return [...sameCategory, ...others].slice(0, limit);
 }
 
-export async function incrementViews(slug: string): Promise<void> {
-  await query(`UPDATE posts SET views = views + 1 WHERE slug = $1`, [slug]);
+/** Returns false when the slug matches no article — the caller uses that to
+ * avoid recording a made-up slug in the reader's "already counted" cookie. */
+export async function incrementViews(slug: string): Promise<boolean> {
+  const rows = await query<{ id: number }>(
+    `UPDATE posts SET views = views + 1 WHERE slug = $1 RETURNING id`,
+    [slug]
+  );
+  return rows.length > 0;
 }
