@@ -28,10 +28,11 @@ if (process.env.NODE_ENV !== "production") {
 
 let schemaReady: Promise<void> | undefined;
 
-/** The 8 rubrics the blog shipped with. They're seeded as ordinary rows now
- * rather than hardcoded in the app, so an editor can add their own — these
- * just guarantee a fresh database isn't empty. */
-const DEFAULT_CATEGORIES = [
+/** The 8 rubrics the blog used to ship with. Nothing seeds them any more —
+ * the editor creates rubrics as articles need them — but they're still listed
+ * here so the one-time cleanup below knows exactly which rows were ours to
+ * remove, and never touches a rubric the editor typed themselves. */
+const RETIRED_SEED_CATEGORIES = [
   "Натальная карта",
   "Совместимость",
   "Астрологические прогнозы",
@@ -75,29 +76,65 @@ async function initSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
 
+      -- Marks one-off data migrations as done. Both apps run initSchema()
+      -- against the same database, so a migration that must happen exactly
+      -- once needs a row here rather than an IF NOT EXISTS guard.
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        name TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+
       -- Structured article body from the block editor. NULL on posts written
       -- before it existed — those keep rendering from the markdown in
       -- posts.content, which stays the plain-text mirror either way.
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS blocks JSONB;
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS bg_color TEXT;
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS cover_alt TEXT;
+
+      -- SEO <title>, kept apart from the on-page H1: the H1 is written for a
+      -- reader mid-page, the meta title for a search result. NULL/empty means
+      -- "no separate one" and the blog falls back to the H1.
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS meta_title TEXT;
+
+      -- Editor's override for the reading estimate, in whole minutes. NULL
+      -- means "work it out from the text", which is what every article did
+      -- before this column existed.
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS reading_time INTEGER;
       `
   );
 
-  await pool.query(
-    `INSERT INTO categories (name, sort_order)
-     SELECT name, ordinality::int
-     FROM unnest($1::text[]) WITH ORDINALITY AS seed(name, ordinality)
-     ON CONFLICT (name) DO NOTHING`,
-    [DEFAULT_CATEGORIES]
-  );
-
-  // Any rubric an existing post already uses becomes a real row too, so the
+  // Any rubric an existing post already uses becomes a real row, so the
   // sidebar can't lose a category that has articles in it.
   await pool.query(
     `INSERT INTO categories (name)
      SELECT DISTINCT category FROM posts WHERE category <> ''
      ON CONFLICT (name) DO NOTHING`
+  );
+
+  await dropRetiredSeedCategories();
+}
+
+/**
+ * Rubrics are the editor's to create, one per article that needs one — so the
+ * 8 we used to seed are removed. Only once, and only the ones no article
+ * stands in: an editor who deliberately recreates "Совместимость" must not
+ * find it deleted again on the next container restart.
+ */
+async function dropRetiredSeedCategories(): Promise<void> {
+  const claimed = await pool.query(
+    `INSERT INTO schema_migrations (name) VALUES ('drop-seeded-categories')
+     ON CONFLICT (name) DO NOTHING
+     RETURNING name`
+  );
+  // rows, not rowCount — pg types the latter as nullable, and a null would
+  // read as "not yet applied" and re-run the delete on every boot.
+  if (claimed.rows.length === 0) return;
+
+  await pool.query(
+    `DELETE FROM categories c
+     WHERE c.name = ANY($1::text[])
+       AND NOT EXISTS (SELECT 1 FROM posts p WHERE p.category = c.name)`,
+    [RETIRED_SEED_CATEGORIES]
   );
 }
 

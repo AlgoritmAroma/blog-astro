@@ -20,16 +20,22 @@ export type PostFormState = { error?: string };
 type ParsedFields = {
   slug: string;
   title: string;
+  metaTitle: string;
   excerpt: string;
   blocks: Block[];
   content: string;
   category: string;
   publishedAt: string;
+  readingTime: number | null;
   views: number;
   cover: string;
   coverAlt: string;
   bgColor: string;
 };
+
+/** Long enough for any real SEO title (Google shows ~60), short enough that a
+ * pasted article body can't end up in the `<title>`. */
+const META_TITLE_MAX = 200;
 
 /**
  * Everything the client sends is re-validated here — the block payload
@@ -41,8 +47,15 @@ async function parseFields(
   existingCover?: string
 ): Promise<{ ok: true; fields: ParsedFields } | { ok: false; error: string }> {
   const title = String(formData.get("title") ?? "").trim();
+  // Lands in <title>, so it must be plain text — anything tag-shaped is
+  // stripped rather than rejected, the same way the cover ALT is handled.
+  const metaTitle = stripInlineHtml(String(formData.get("metaTitle") ?? "").trim()).slice(
+    0,
+    META_TITLE_MAX
+  );
   const excerpt = String(formData.get("excerpt") ?? "").trim();
   const publishedAt = String(formData.get("publishedAt") ?? "").trim();
+  const readingTimeRaw = String(formData.get("readingTime") ?? "").trim();
   const viewsRaw = String(formData.get("views") ?? "").trim();
   const slugRaw = String(formData.get("slug") ?? "").trim();
   const categoryRaw = String(formData.get("category") ?? "").trim();
@@ -85,11 +98,22 @@ async function parseFields(
     return { ok: false, error: "Просмотры должны быть неотрицательным числом." };
   }
 
+  // Blank is a real answer here — it means "keep estimating from the text" —
+  // so only a filled-in field is validated.
+  let readingTime: number | null = null;
+  if (readingTimeRaw) {
+    readingTime = Number(readingTimeRaw);
+    if (!Number.isInteger(readingTime) || readingTime < 1 || readingTime > 600) {
+      return { ok: false, error: "Время чтения — целое число минут от 1 до 600 (или пусто)." };
+    }
+  }
+
   return {
     ok: true,
     fields: {
       slug,
       title,
+      metaTitle,
       excerpt,
       blocks,
       // Plain-text mirror of the blocks. Reading-time estimation reads this
@@ -98,6 +122,7 @@ async function parseFields(
       content: blocksToPlainText(blocks),
       category,
       publishedAt,
+      readingTime,
       views,
       cover,
       coverAlt,
@@ -110,6 +135,7 @@ function toInput(fields: ParsedFields): PostInput {
   return {
     slug: fields.slug,
     title: fields.title,
+    metaTitle: fields.metaTitle,
     excerpt: fields.excerpt,
     content: fields.content,
     blocks: fields.blocks,
@@ -118,6 +144,7 @@ function toInput(fields: ParsedFields): PostInput {
     coverAlt: fields.coverAlt,
     bgColor: fields.bgColor,
     publishedAt: fields.publishedAt,
+    readingTime: fields.readingTime,
     views: fields.views,
   };
 }

@@ -10,6 +10,7 @@ type PostRow = {
   id: number;
   slug: string;
   title: string;
+  meta_title: string | null;
   excerpt: string;
   content: string;
   category: string;
@@ -18,6 +19,7 @@ type PostRow = {
   bg_color: string | null;
   blocks: unknown;
   published_at: string;
+  reading_time: number | null;
   views: number;
 };
 
@@ -31,12 +33,15 @@ function rowToMeta(row: PostRow): PostMeta {
     id: row.id,
     slug: row.slug,
     title: row.title,
+    metaTitle: row.meta_title ?? "",
     excerpt: row.excerpt,
     date: row.published_at,
     category: row.category,
     cover: row.cover,
     coverAlt: row.cover_alt || row.title,
-    readingTime: readingTimeFromText(row.content),
+    // The estimate is only a fallback: once the editor puts a number in the
+    // form it wins, and re-editing the body never quietly moves it.
+    readingTime: row.reading_time ?? readingTimeFromText(row.content),
     views: row.views,
   };
 }
@@ -54,6 +59,8 @@ export async function getAllPosts(): Promise<PostMeta[]> {
 export type PostInput = {
   slug: string;
   title: string;
+  /** Empty string when the editor left the SEO title blank — stored as NULL. */
+  metaTitle: string;
   excerpt: string;
   content: string;
   blocks: Block[];
@@ -62,6 +69,8 @@ export type PostInput = {
   coverAlt: string;
   bgColor: string;
   publishedAt: string;
+  /** null = estimate it from the text. */
+  readingTime: number | null;
   views: number;
 };
 
@@ -80,6 +89,7 @@ export async function getPostById(id: number): Promise<(PostInput & { id: number
     id: row.id,
     slug: row.slug,
     title: row.title,
+    metaTitle: row.meta_title ?? "",
     excerpt: row.excerpt,
     content: row.content,
     blocks,
@@ -88,18 +98,21 @@ export async function getPostById(id: number): Promise<(PostInput & { id: number
     coverAlt: row.cover_alt ?? "",
     bgColor: row.bg_color || DEFAULT_BACKGROUND,
     publishedAt: row.published_at,
+    readingTime: row.reading_time,
     views: row.views,
   };
 }
 
 export async function createPost(input: PostInput): Promise<number> {
   const rows = await query<{ id: number }>(
-    `INSERT INTO posts (slug, title, excerpt, content, blocks, category, cover, cover_alt, bg_color, published_at, views)
-     VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10, $11)
+    `INSERT INTO posts (slug, title, meta_title, excerpt, content, blocks, category, cover, cover_alt,
+     bg_color, published_at, reading_time, views)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13)
      RETURNING id`,
     [
       input.slug,
       input.title,
+      input.metaTitle || null,
       input.excerpt,
       input.content,
       JSON.stringify(input.blocks),
@@ -108,6 +121,7 @@ export async function createPost(input: PostInput): Promise<number> {
       input.coverAlt,
       input.bgColor,
       input.publishedAt,
+      input.readingTime,
       input.views,
     ]
   );
@@ -116,12 +130,14 @@ export async function createPost(input: PostInput): Promise<number> {
 
 export async function updatePost(id: number, input: PostInput): Promise<void> {
   await query(
-    `UPDATE posts SET slug=$1, title=$2, excerpt=$3, content=$4, blocks=$5::jsonb,
-     category=$6, cover=$7, cover_alt=$8, bg_color=$9, published_at=$10, views=$11, updated_at=now()
-     WHERE id=$12`,
+    `UPDATE posts SET slug=$1, title=$2, meta_title=$3, excerpt=$4, content=$5, blocks=$6::jsonb,
+     category=$7, cover=$8, cover_alt=$9, bg_color=$10, published_at=$11, reading_time=$12,
+     views=$13, updated_at=now()
+     WHERE id=$14`,
     [
       input.slug,
       input.title,
+      input.metaTitle || null,
       input.excerpt,
       input.content,
       JSON.stringify(input.blocks),
@@ -130,6 +146,7 @@ export async function updatePost(id: number, input: PostInput): Promise<void> {
       input.coverAlt,
       input.bgColor,
       input.publishedAt,
+      input.readingTime,
       input.views,
       id,
     ]

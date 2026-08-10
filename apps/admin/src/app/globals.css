@@ -278,6 +278,12 @@ button:disabled {
   margin: 4px 0 0;
 }
 
+/* Advisory, not an error — the save still goes through. */
+.admin-hint-warn {
+  color: #a2621b;
+  opacity: 1;
+}
+
 .admin-hint-inline {
   font-size: 0.72rem;
   opacity: 0.55;

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { PostMeta } from "@/lib/blog";
-import { formatDate, formatViews } from "@/lib/format";
+import { formatDate, formatViews, formatReadingTime } from "@/lib/format";
 
 export default function PostCard({ post }: { post: PostMeta }) {
   return (
@@ -38,7 +38,7 @@ export default function PostCard({ post }: { post: PostMeta }) {
           <span>·</span>
           <span>{formatViews(post.views)} просмотров</span>
           <span>·</span>
-          <span>{post.readingTime} мин чтения</span>
+          <span>{formatReadingTime(post.readingTime)} чтения</span>
         </div>
         <Link href={`/blog/${post.slug}`} className="post-card__more">
           Читать далее →
