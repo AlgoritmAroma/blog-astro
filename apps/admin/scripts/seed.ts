@@ -23,8 +23,11 @@ async function main() {
     const { data, content } = matter(raw);
 
     const rows = await query<{ id: number }>(
-      `INSERT INTO posts (slug, title, excerpt, content, category, cover, published_at, views)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      // The `views:` value in the markdown frontmatter is ignored: the counter
+      // on the site is a real one, and an imported article has been read by
+      // nobody yet. `views` falls to its column default of 0.
+      `INSERT INTO posts (slug, title, excerpt, content, category, cover, published_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (slug) DO NOTHING
        RETURNING id`,
       [
@@ -35,7 +38,6 @@ async function main() {
         data.category as string,
         data.cover as string,
         data.date as string,
-        typeof data.views === "number" ? data.views : 1000,
       ]
     );
 

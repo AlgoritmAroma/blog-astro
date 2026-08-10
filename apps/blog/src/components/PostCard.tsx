@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { PostMeta } from "@/lib/blog";
-import { formatDate, formatViews, formatReadingTime } from "@/lib/format";
+import { MIN_PUBLIC_VIEWS, type PostMeta } from "@/lib/blog";
+import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
 
 export default function PostCard({ post }: { post: PostMeta }) {
   return (
@@ -35,8 +35,12 @@ export default function PostCard({ post }: { post: PostMeta }) {
         <p style={{ fontSize: "0.95rem", opacity: 0.75, marginBottom: 10 }}>{post.excerpt}</p>
         <div className="post-card__meta">
           <span>{formatDate(post.date)}</span>
-          <span>·</span>
-          <span>{formatViews(post.views)} просмотров</span>
+          {post.views >= MIN_PUBLIC_VIEWS && (
+            <>
+              <span>·</span>
+              <span>{formatViewCount(post.views)}</span>
+            </>
+          )}
           <span>·</span>
           <span>{formatReadingTime(post.readingTime)} чтения</span>
         </div>

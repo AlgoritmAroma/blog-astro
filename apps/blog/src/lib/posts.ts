@@ -94,6 +94,12 @@ export async function getRelatedPosts(current: PostMeta, limit = 2): Promise<Pos
   return [...sameCategory, ...others].slice(0, limit);
 }
 
-export async function incrementViews(slug: string): Promise<void> {
-  await query(`UPDATE posts SET views = views + 1 WHERE slug = $1`, [slug]);
+/** Returns false when the slug matches no article — the caller uses that to
+ * avoid recording a made-up slug in the reader's "already counted" cookie. */
+export async function incrementViews(slug: string): Promise<boolean> {
+  const rows = await query<{ id: number }>(
+    `UPDATE posts SET views = views + 1 WHERE slug = $1 RETURNING id`,
+    [slug]
+  );
+  return rows.length > 0;
 }

@@ -17,7 +17,6 @@ export type PostFormValues = {
   category: string;
   publishedAt: string;
   readingTime: number | null;
-  views: number;
   cover: string;
   coverAlt: string;
   bgColor: string;
@@ -78,7 +77,6 @@ export default function PostForm({
   const [readingTime, setReadingTime] = useState(
     initialValues?.readingTime == null ? "" : String(initialValues.readingTime)
   );
-  const [views, setViews] = useState(String(initialValues?.views ?? 1000));
   const [cover, setCover] = useState(initialValues?.cover ?? "");
   const [coverAlt, setCoverAlt] = useState(initialValues?.coverAlt ?? "");
   const [bgColor, setBgColor] = useState(initialValues?.bgColor || DEFAULT_BACKGROUND);
@@ -98,7 +96,6 @@ export default function PostForm({
       category: category === NEW_CATEGORY ? newCategory : category,
       publishedAt,
       readingTime: readingTime.trim() === "" ? null : Number(readingTime) || null,
-      views: Number(views) || 0,
       cover,
       coverAlt,
       bgColor,
@@ -113,7 +110,6 @@ export default function PostForm({
       newCategory,
       publishedAt,
       readingTime,
-      views,
       cover,
       coverAlt,
       bgColor,
@@ -134,7 +130,6 @@ export default function PostForm({
       category: initialValues?.category ?? "",
       publishedAt: initialValues?.publishedAt ?? (typeof window === "undefined" ? "" : todayLocal()),
       readingTime: initialValues?.readingTime ?? null,
-      views: initialValues?.views ?? 1000,
       cover: initialValues?.cover ?? "",
       coverAlt: initialValues?.coverAlt ?? "",
       bgColor: initialValues?.bgColor || DEFAULT_BACKGROUND,
@@ -191,7 +186,6 @@ export default function PostForm({
     setCategory(draft.values.category);
     setPublishedAt(draft.values.publishedAt);
     setReadingTime(draft.values.readingTime == null ? "" : String(draft.values.readingTime));
-    setViews(String(draft.values.views));
     setCover(draft.values.cover);
     setCoverAlt(draft.values.coverAlt);
     setBgColor(draft.values.bgColor || DEFAULT_BACKGROUND);
@@ -443,18 +437,6 @@ export default function PostForm({
             </p>
           </div>
 
-          <div className="admin-form-field">
-            <label htmlFor="views">Просмотры (для соц. доказательства)</label>
-            <input
-              id="views"
-              name="views"
-              type="number"
-              min={0}
-              className="admin-input"
-              value={views}
-              onChange={(e) => setViews(e.target.value)}
-            />
-          </div>
         </div>
 
         <div className="admin-form-actions">

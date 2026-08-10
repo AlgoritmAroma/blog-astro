@@ -55,7 +55,7 @@ async function initSchema(): Promise<void> {
         category TEXT NOT NULL,
         cover TEXT NOT NULL,
         published_at TEXT NOT NULL,
-        views INTEGER NOT NULL DEFAULT 1000,
+        views INTEGER NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
@@ -100,6 +100,10 @@ async function initSchema(): Promise<void> {
       -- means "work it out from the text", which is what every article did
       -- before this column existed.
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS reading_time INTEGER;
+
+      -- Was 1000: a new article opened with a thousand views nobody had made.
+      -- The counter is the real number now, so it starts where the truth does.
+      ALTER TABLE posts ALTER COLUMN views SET DEFAULT 0;
       `
   );
 
@@ -112,6 +116,21 @@ async function initSchema(): Promise<void> {
   );
 
   await dropRetiredSeedCategories();
+  await resetViewCounts();
+}
+
+/** Runs a one-off data migration exactly once across both apps, and tells the
+ * caller whether this process is the one that got to run it. */
+async function claimMigration(name: string): Promise<boolean> {
+  const claimed = await pool.query(
+    `INSERT INTO schema_migrations (name) VALUES ($1)
+     ON CONFLICT (name) DO NOTHING
+     RETURNING name`,
+    [name]
+  );
+  // rows, not rowCount — pg types the latter as nullable, and a null would
+  // read as "not yet applied" and re-run the migration on every boot.
+  return claimed.rows.length > 0;
 }
 
 /**
@@ -121,14 +140,7 @@ async function initSchema(): Promise<void> {
  * find it deleted again on the next container restart.
  */
 async function dropRetiredSeedCategories(): Promise<void> {
-  const claimed = await pool.query(
-    `INSERT INTO schema_migrations (name) VALUES ('drop-seeded-categories')
-     ON CONFLICT (name) DO NOTHING
-     RETURNING name`
-  );
-  // rows, not rowCount — pg types the latter as nullable, and a null would
-  // read as "not yet applied" and re-run the delete on every boot.
-  if (claimed.rows.length === 0) return;
+  if (!(await claimMigration("drop-seeded-categories"))) return;
 
   await pool.query(
     `DELETE FROM categories c
@@ -136,6 +148,18 @@ async function dropRetiredSeedCategories(): Promise<void> {
        AND NOT EXISTS (SELECT 1 FROM posts p WHERE p.category = c.name)`,
     [RETIRED_SEED_CATEGORIES]
   );
+}
+
+/**
+ * Every article carried a made-up head start of 1000-plus views, topped up by
+ * hand from the admin. The counter is presented as a real one, so it has to
+ * start from zero — a number nobody invented — and grow only from actual
+ * reads. Once, obviously: a restart must not wipe what has been counted since.
+ */
+async function resetViewCounts(): Promise<void> {
+  if (!(await claimMigration("reset-view-counts"))) return;
+
+  await pool.query(`UPDATE posts SET views = 0`);
 }
 
 /** Every query goes through here so the schema-exists check runs at most

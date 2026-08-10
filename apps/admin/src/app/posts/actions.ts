@@ -27,7 +27,6 @@ type ParsedFields = {
   category: string;
   publishedAt: string;
   readingTime: number | null;
-  views: number;
   cover: string;
   coverAlt: string;
   bgColor: string;
@@ -56,7 +55,6 @@ async function parseFields(
   const excerpt = String(formData.get("excerpt") ?? "").trim();
   const publishedAt = String(formData.get("publishedAt") ?? "").trim();
   const readingTimeRaw = String(formData.get("readingTime") ?? "").trim();
-  const viewsRaw = String(formData.get("views") ?? "").trim();
   const slugRaw = String(formData.get("slug") ?? "").trim();
   const categoryRaw = String(formData.get("category") ?? "").trim();
   const bgRaw = String(formData.get("bgColor") ?? "").trim();
@@ -93,11 +91,6 @@ async function parseFields(
     return { ok: false, error: "Не удалось получить корректный slug — измените заголовок." };
   }
 
-  const views = viewsRaw ? Number(viewsRaw) : 1000;
-  if (!Number.isFinite(views) || views < 0) {
-    return { ok: false, error: "Просмотры должны быть неотрицательным числом." };
-  }
-
   // Blank is a real answer here — it means "keep estimating from the text" —
   // so only a filled-in field is validated.
   let readingTime: number | null = null;
@@ -123,7 +116,6 @@ async function parseFields(
       category,
       publishedAt,
       readingTime,
-      views,
       cover,
       coverAlt,
       bgColor: isPageBackground(bgRaw) ? bgRaw : DEFAULT_BACKGROUND,
@@ -145,7 +137,6 @@ function toInput(fields: ParsedFields): PostInput {
     bgColor: fields.bgColor,
     publishedAt: fields.publishedAt,
     readingTime: fields.readingTime,
-    views: fields.views,
   };
 }
 

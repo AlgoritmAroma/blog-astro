@@ -32,3 +32,9 @@ export function pluralRu(count: number, one: string, few: string, many: string):
 export function formatReadingTime(minutes: number): string {
   return `${minutes} ${pluralRu(minutes, "минута", "минуты", "минут")}`;
 }
+
+/** "1 234 просмотра" / "1 205 просмотров" — the noun follows the last digits,
+ * so it can't be a fixed "просмотров" next to a live counter. */
+export function formatViewCount(views: number): string {
+  return `${formatViews(views)} ${pluralRu(views, "просмотр", "просмотра", "просмотров")}`;
+}

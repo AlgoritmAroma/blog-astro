@@ -71,8 +71,9 @@ export type PostInput = {
   publishedAt: string;
   /** null = estimate it from the text. */
   readingTime: number | null;
-  views: number;
 };
+// No `views` here on purpose: the counter belongs to the readers now, and an
+// article save must not overwrite what they've counted.
 
 export async function getPostById(id: number): Promise<(PostInput & { id: number }) | null> {
   const rows = await query<PostRow>(`SELECT * FROM posts WHERE id = $1`, [id]);
@@ -99,15 +100,16 @@ export async function getPostById(id: number): Promise<(PostInput & { id: number
     bgColor: row.bg_color || DEFAULT_BACKGROUND,
     publishedAt: row.published_at,
     readingTime: row.reading_time,
-    views: row.views,
   };
 }
 
 export async function createPost(input: PostInput): Promise<number> {
   const rows = await query<{ id: number }>(
+    // `views` is left to its column default of 0 — a new article has been read
+    // by nobody yet, and that is the number.
     `INSERT INTO posts (slug, title, meta_title, excerpt, content, blocks, category, cover, cover_alt,
-     bg_color, published_at, reading_time, views)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13)
+     bg_color, published_at, reading_time)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12)
      RETURNING id`,
     [
       input.slug,
@@ -122,7 +124,6 @@ export async function createPost(input: PostInput): Promise<number> {
       input.bgColor,
       input.publishedAt,
       input.readingTime,
-      input.views,
     ]
   );
   return rows[0].id;
@@ -130,10 +131,11 @@ export async function createPost(input: PostInput): Promise<number> {
 
 export async function updatePost(id: number, input: PostInput): Promise<void> {
   await query(
+    // Deliberately no `views` column here — see PostInput.
     `UPDATE posts SET slug=$1, title=$2, meta_title=$3, excerpt=$4, content=$5, blocks=$6::jsonb,
      category=$7, cover=$8, cover_alt=$9, bg_color=$10, published_at=$11, reading_time=$12,
-     views=$13, updated_at=now()
-     WHERE id=$14`,
+     updated_at=now()
+     WHERE id=$13`,
     [
       input.slug,
       input.title,
@@ -147,7 +149,6 @@ export async function updatePost(id: number, input: PostInput): Promise<void> {
       input.bgColor,
       input.publishedAt,
       input.readingTime,
-      input.views,
       id,
     ]
   );
