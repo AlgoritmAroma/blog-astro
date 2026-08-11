@@ -192,11 +192,17 @@ h3 {
   pointer-events: none;
 }
 
-/* ---------- arch shape (church-window motif) ---------- */
+/* ---------- cover frame ---------- */
 
-.arch {
+/* The upload pipeline crops every cover to 3:4, so the frame carries that
+   ratio wherever a cover is shown. A frame of any other shape would re-crop
+   the image in the browser on top of the crop the editor already chose —
+   which is how the article cover used to end up showing 41% of its own
+   picture, blown up, in a 16:9 box. */
+.cover-frame {
   position: relative;
-  border-radius: 50% 50% 0 0 / 34% 34% 0 0;
+  aspect-ratio: 3 / 4;
+  border-radius: 24px;
   overflow: hidden;
   border: 1px solid var(--orange-12);
 }

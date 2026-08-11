@@ -7,14 +7,7 @@ export default function PostCard({ post }: { post: PostMeta }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <Link href={`/blog/${post.slug}`} style={{ display: "block" }}>
-        <div
-          className="arch"
-          style={{
-            width: "100%",
-            aspectRatio: "3 / 4",
-            position: "relative",
-          }}
-        >
+        <div className="cover-frame" style={{ width: "100%" }}>
           <Image
             src={post.cover}
             alt={post.title}

@@ -94,17 +94,24 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
       <section style={{ background: post.bgColor, paddingBottom: 96 }}>
         <div className="container" style={{ maxWidth: 820 }}>
+          {/* Narrower than the text column on purpose: at the column's full
+              width a 3:4 cover would be over 800px tall and push the article
+              itself below the fold. */}
           <div
-            className="arch"
+            className="cover-frame"
             style={{
               width: "100%",
-              aspectRatio: "16 / 9",
-              position: "relative",
               margin: "-140px auto 48px",
-              maxWidth: 640,
+              maxWidth: 380,
             }}
           >
-            <Image src={post.cover} alt={post.coverAlt} fill sizes="640px" style={{ objectFit: "cover" }} />
+            <Image
+              src={post.cover}
+              alt={post.coverAlt}
+              fill
+              sizes="(max-width: 520px) 90vw, 380px"
+              style={{ objectFit: "cover" }}
+            />
           </div>
 
           {/* Articles from the block constructor render structurally; the ones

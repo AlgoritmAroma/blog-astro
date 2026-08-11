@@ -52,8 +52,8 @@ export type SavedImage = { src: string; width: number; height: number };
  * anything that isn't a decodable image regardless of the MIME type the
  * browser claimed, and it strips EXIF/metadata on the way out.
  *
- * Covers are cropped to 3:4 to match the arch-card aspect PostCard uses;
- * in-article images keep their own proportions.
+ * Covers are cropped to 3:4 to match the blog's `.cover-frame`, the single
+ * shape every cover is shown in; in-article images keep their own proportions.
  *
  * An animated GIF or WebP keeps its animation: sharp only reads the first
  * frame unless it is told the input has pages, and the encoder only writes
