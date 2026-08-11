@@ -311,7 +311,7 @@ export default function PostForm({
           kind="covers"
           slugHint={slugHint}
           label="Обложка статьи (она же превью в списке блога)"
-          aspect="3 / 4"
+          aspect="3 / 2"
           value={cover}
           onChange={({ src }) => setCover(src)}
         />

@@ -52,7 +52,7 @@ export type SavedImage = { src: string; width: number; height: number };
  * anything that isn't a decodable image regardless of the MIME type the
  * browser claimed, and it strips EXIF/metadata on the way out.
  *
- * Covers are cropped to 3:4 to match the blog's `.cover-frame`, the single
+ * Covers are cropped to 3:2 to match the blog's `.cover-frame`, the single
  * shape every cover is shown in; in-article images keep their own proportions.
  *
  * An animated GIF or WebP keeps its animation: sharp only reads the first
@@ -86,7 +86,7 @@ export async function saveImage(file: File, kind: UploadKind, slugHint: string):
     const base = sharp(buffer, { animated });
     const pipeline = animated ? base : base.rotate();
     const result = await (kind === "covers"
-      ? pipeline.resize({ width: 1200, height: 1600, fit: "cover" })
+      ? pipeline.resize({ width: 1800, height: 1200, fit: "cover" })
       : pipeline.resize({ width: CONTENT_MAX_EDGE, height: CONTENT_MAX_EDGE, fit: "inside", withoutEnlargement: true })
     )
       .webp({ quality: 82 })
