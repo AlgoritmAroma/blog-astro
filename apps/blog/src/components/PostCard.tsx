@@ -4,9 +4,11 @@ import { MIN_PUBLIC_VIEWS, type PostMeta } from "@/lib/blog";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
 
 export default function PostCard({ post }: { post: PostMeta }) {
+  const href = `/blog/${post.slug}`;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      <Link href={`/blog/${post.slug}`} style={{ display: "block" }}>
+    <article className="post-card">
+      <Link href={href} style={{ display: "block" }}>
         <div className="cover-frame" style={{ width: "100%" }}>
           <Image
             src={post.cover}
@@ -18,29 +20,30 @@ export default function PostCard({ post }: { post: PostMeta }) {
         </div>
       </Link>
 
-      <div>
-        <span className="tag" style={{ marginBottom: 4 }}>
-          {post.category}
-        </span>
-        <Link href={`/blog/${post.slug}`}>
-          <h3 style={{ fontSize: "1.25rem", margin: "12px 0 8px" }}>{post.title}</h3>
+      <div className="post-card__body">
+        <span className="tag">{post.category}</span>
+        <Link href={href}>
+          <h3 className="post-card__title">{post.title}</h3>
         </Link>
-        <p style={{ fontSize: "0.95rem", opacity: 0.75, marginBottom: 10 }}>{post.excerpt}</p>
-        <div className="post-card__meta">
-          <span>{formatDate(post.date)}</span>
-          {post.views >= MIN_PUBLIC_VIEWS && (
-            <>
-              <span>·</span>
-              <span>{formatViewCount(post.views)}</span>
-            </>
-          )}
-          <span>·</span>
-          <span>{formatReadingTime(post.readingTime)} чтения</span>
+        <p className="post-card__excerpt">{post.excerpt}</p>
+
+        <div className="post-card__footer">
+          <div className="post-card__meta">
+            <span>{formatDate(post.date)}</span>
+            {post.views >= MIN_PUBLIC_VIEWS && (
+              <>
+                <span>·</span>
+                <span>{formatViewCount(post.views)}</span>
+              </>
+            )}
+            <span>·</span>
+            <span>{formatReadingTime(post.readingTime)} чтения</span>
+          </div>
+          <Link href={href} className="post-card__more">
+            Читать далее →
+          </Link>
         </div>
-        <Link href={`/blog/${post.slug}`} className="post-card__more">
-          Читать далее →
-        </Link>
       </div>
-    </div>
+    </article>
   );
 }
