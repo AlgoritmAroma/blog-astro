@@ -31,6 +31,11 @@ export type PostMeta = {
   category: string;
   cover: string;
   coverAlt: string;
+  /** Which part of the cover the 3:2 frame keeps, as CSS `object-position`
+   * percentages. Covers are stored uncropped, so without this the frame would
+   * fall back to taking the middle — which is where the subject usually
+   * isn't. */
+  coverFocus: { x: number; y: number };
   /** Whole minutes — the editor's override if they set one, otherwise
    * estimated from the article text. */
   readingTime: number;

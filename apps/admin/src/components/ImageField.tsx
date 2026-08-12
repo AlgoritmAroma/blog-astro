@@ -11,7 +11,14 @@ import { ACCEPT_ATTRIBUTE, MAX_UPLOAD_BYTES } from "@/lib/upload-constants";
  * is never submitted, so nothing else on the page is touched, and the error
  * appears next to the field that caused it.
  */
-export type UploadedImage = { src: string; width: number; height: number };
+export type UploadedImage = {
+  src: string;
+  width: number;
+  height: number;
+  /** Where the server thinks the subject is, in percent. Only meaningful for
+   * covers — an in-article image is never framed, so nothing reads it. */
+  focus: { x: number; y: number };
+};
 
 export default function ImageField({
   value,
@@ -19,7 +26,7 @@ export default function ImageField({
   kind,
   slugHint,
   label,
-  aspect,
+  showPreview = true,
 }: {
   value: string;
   /** `src` is empty when the image is removed; the dimensions come straight
@@ -28,7 +35,9 @@ export default function ImageField({
   kind: "covers" | "content";
   slugHint: string;
   label: string;
-  aspect?: string;
+  /** Covers set this false: CoverFocusPicker shows the image, in the frame it
+   * will be cropped to, and a second copy above it would only compete. */
+  showPreview?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -59,7 +68,12 @@ export default function ImageField({
         setError(data.error ?? `Не удалось загрузить изображение (код ${res.status}).`);
         return;
       }
-      onChange({ src: data.src, width: data.width ?? 0, height: data.height ?? 0 });
+      onChange({
+        src: data.src,
+        width: data.width ?? 0,
+        height: data.height ?? 0,
+        focus: data.focus ?? { x: 50, y: 50 },
+      });
     } catch {
       setError("Сеть недоступна — изображение не загрузилось.");
     } finally {
@@ -74,28 +88,9 @@ export default function ImageField({
     <div className="admin-form-field">
       <label>{label}</label>
 
-      {value && (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={value}
-            alt=""
-            className="admin-image-preview"
-            style={{ aspectRatio: aspect }}
-          />
-          {/* The preview is the stored file, already cropped — so what is on
-              screen here is exactly what the blog will show. Said out loud
-              because the crop happens server-side, out of sight, and an
-              editor who doesn't know it happened reads a bad crop as a bug in
-              the site rather than as something a different photo would fix. */}
-          {aspect && (
-            <p className="admin-hint">
-              Так обложка и будет выглядеть на сайте — она обрезана до {aspect.replace(" / ", ":")}{" "}
-              автоматически. Если срезано важное, загрузите горизонтальный кадр или обрежьте
-              картинку заранее.
-            </p>
-          )}
-        </>
+      {value && showPreview && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={value} alt="" className="admin-image-preview" />
       )}
 
       <div className="admin-inline-actions">
@@ -114,7 +109,7 @@ export default function ImageField({
           <button
             type="button"
             className="admin-btn-ghost admin-btn-small"
-            onClick={() => onChange({ src: "", width: 0, height: 0 })}
+            onClick={() => onChange({ src: "", width: 0, height: 0, focus: { x: 50, y: 50 } })}
           >
             Удалить
           </button>

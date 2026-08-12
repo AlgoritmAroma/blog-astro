@@ -107,7 +107,10 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               alt={post.coverAlt}
               fill
               sizes="(max-width: 880px) 90vw, 640px"
-              style={{ objectFit: "cover" }}
+              style={{
+                objectFit: "cover",
+                objectPosition: `${post.coverFocus.x}% ${post.coverFocus.y}%`,
+              }}
             />
           </div>
 

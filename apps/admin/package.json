@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test:blocks": "tsx scripts/blocks.test.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "covers:normalize": "tsx scripts/normalize-covers.ts"
+    "covers:focus": "tsx scripts/backfill-cover-focus.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -16,6 +16,8 @@ type PostRow = {
   category: string;
   cover: string;
   cover_alt: string | null;
+  cover_focus_x: number | null;
+  cover_focus_y: number | null;
   bg_color: string | null;
   blocks: unknown;
   published_at: string;
@@ -67,6 +69,10 @@ export type PostInput = {
   category: string;
   cover: string;
   coverAlt: string;
+  /** Percent of the cover's own width/height, handed to the blog as CSS
+   * `object-position`. Never null on the way in — the form always sends a
+   * pair, defaulting to the centre for a cover uploaded before the picker. */
+  coverFocus: { x: number; y: number };
   bgColor: string;
   publishedAt: string;
   /** null = estimate it from the text. */
@@ -97,6 +103,7 @@ export async function getPostById(id: number): Promise<(PostInput & { id: number
     category: row.category,
     cover: row.cover,
     coverAlt: row.cover_alt ?? "",
+    coverFocus: { x: row.cover_focus_x ?? 50, y: row.cover_focus_y ?? 50 },
     bgColor: row.bg_color || DEFAULT_BACKGROUND,
     publishedAt: row.published_at,
     readingTime: row.reading_time,
@@ -108,8 +115,8 @@ export async function createPost(input: PostInput): Promise<number> {
     // `views` is left to its column default of 0 — a new article has been read
     // by nobody yet, and that is the number.
     `INSERT INTO posts (slug, title, meta_title, excerpt, content, blocks, category, cover, cover_alt,
-     bg_color, published_at, reading_time)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12)
+     cover_focus_x, cover_focus_y, bg_color, published_at, reading_time)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING id`,
     [
       input.slug,
@@ -121,6 +128,8 @@ export async function createPost(input: PostInput): Promise<number> {
       input.category,
       input.cover,
       input.coverAlt,
+      input.coverFocus.x,
+      input.coverFocus.y,
       input.bgColor,
       input.publishedAt,
       input.readingTime,
@@ -133,9 +142,9 @@ export async function updatePost(id: number, input: PostInput): Promise<void> {
   await query(
     // Deliberately no `views` column here — see PostInput.
     `UPDATE posts SET slug=$1, title=$2, meta_title=$3, excerpt=$4, content=$5, blocks=$6::jsonb,
-     category=$7, cover=$8, cover_alt=$9, bg_color=$10, published_at=$11, reading_time=$12,
-     updated_at=now()
-     WHERE id=$13`,
+     category=$7, cover=$8, cover_alt=$9, cover_focus_x=$10, cover_focus_y=$11, bg_color=$12,
+     published_at=$13, reading_time=$14, updated_at=now()
+     WHERE id=$15`,
     [
       input.slug,
       input.title,
@@ -146,6 +155,8 @@ export async function updatePost(id: number, input: PostInput): Promise<void> {
       input.category,
       input.cover,
       input.coverAlt,
+      input.coverFocus.x,
+      input.coverFocus.y,
       input.bgColor,
       input.publishedAt,
       input.readingTime,
