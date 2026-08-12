@@ -75,13 +75,27 @@ export default function ImageField({
       <label>{label}</label>
 
       {value && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={value}
-          alt=""
-          className="admin-image-preview"
-          style={{ aspectRatio: aspect }}
-        />
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={value}
+            alt=""
+            className="admin-image-preview"
+            style={{ aspectRatio: aspect }}
+          />
+          {/* The preview is the stored file, already cropped — so what is on
+              screen here is exactly what the blog will show. Said out loud
+              because the crop happens server-side, out of sight, and an
+              editor who doesn't know it happened reads a bad crop as a bug in
+              the site rather than as something a different photo would fix. */}
+          {aspect && (
+            <p className="admin-hint">
+              Так обложка и будет выглядеть на сайте — она обрезана до {aspect.replace(" / ", ":")}{" "}
+              автоматически. Если срезано важное, загрузите горизонтальный кадр или обрежьте
+              картинку заранее.
+            </p>
+          )}
+        </>
       )}
 
       <div className="admin-inline-actions">

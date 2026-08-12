@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:blocks": "tsx scripts/blocks.test.ts",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "covers:normalize": "tsx scripts/normalize-covers.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

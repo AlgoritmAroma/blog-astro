@@ -55,6 +55,16 @@ export type SavedImage = { src: string; width: number; height: number };
  * Covers are cropped to 3:2 to match the blog's `.cover-frame`, the single
  * shape every cover is shown in; in-article images keep their own proportions.
  *
+ * That crop picks its region with sharp's `attention` strategy rather than
+ * taking the middle. A portrait photo cropped to 3:2 loses 44% of its height
+ * and a phone-shot 9:16 loses 66% — taken from the centre that reliably
+ * beheads the subject, because the thing worth keeping sits in the upper
+ * third far more often than dead centre. `attention` ranks edge regions by
+ * luminance frequency, saturation and skin tones and discards the dullest,
+ * which keeps faces and the horizon in frame. It cannot be used on a
+ * multi-page image — sharp rejects it with "Resize strategy is not supported
+ * for multi-page images" — so an animated cover keeps the centre crop.
+ *
  * An animated GIF or WebP keeps its animation: sharp only reads the first
  * frame unless it is told the input has pages, and the encoder only writes
  * an animated webp if it was decoded that way. Rotation is skipped for those
@@ -86,7 +96,12 @@ export async function saveImage(file: File, kind: UploadKind, slugHint: string):
     const base = sharp(buffer, { animated });
     const pipeline = animated ? base : base.rotate();
     const result = await (kind === "covers"
-      ? pipeline.resize({ width: 1800, height: 1200, fit: "cover" })
+      ? pipeline.resize({
+          width: 1800,
+          height: 1200,
+          fit: "cover",
+          ...(animated ? {} : { position: sharp.strategy.attention }),
+        })
       : pipeline.resize({ width: CONTENT_MAX_EDGE, height: CONTENT_MAX_EDGE, fit: "inside", withoutEnlargement: true })
     )
       .webp({ quality: 82 })

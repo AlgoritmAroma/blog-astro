@@ -507,12 +507,21 @@ button:disabled {
   margin-bottom: 16px;
 }
 
+/* Shown at the width the blog shows it, not as a thumbnail. A cover is
+   cropped to 3:2 on upload, and at 140px wide the editor could not see what
+   the crop had taken — a beheaded portrait and a well-framed one look
+   identical that small. `aspect-ratio` is set inline, per field: covers get
+   the blog's 3:2, an in-article image keeps whatever proportions it was
+   stored at, capped so a tall one doesn't push the form off screen. */
 .admin-image-preview {
-  width: 140px;
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  max-height: 420px;
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid #e4ddd0;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .admin-swatches {

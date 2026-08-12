@@ -43,6 +43,12 @@ apps/*/public/uploads/*
 /uploads/*
 !/uploads/.gitkeep
 
+# pre-crop originals kept by scripts/normalize-covers.ts. Insurance for an
+# in-place rewrite on a server, where there is no history to fall back on —
+# the copies under apps/blog/public/images are redundant with git's own and
+# would only double the repo's image weight.
+**/.pre-3x2/
+
 # vercel
 .vercel
 
