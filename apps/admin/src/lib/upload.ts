@@ -42,18 +42,45 @@ function safeStem(hint: string): string {
   return cleaned || "image";
 }
 
-export type SavedImage = { src: string; width: number; height: number };
+// Focus detection lives in its own module so the backfill script can import
+// it from a plain node process — see the note at the top of cover-focus.ts.
+export { CENTRE_FOCUS, type Focus } from "@/lib/cover-focus";
+import { detectFocus, CENTRE_FOCUS, type Focus } from "@/lib/cover-focus";
+
+export type SavedImage = { src: string; width: number; height: number; focus: Focus };
+
+/** Covers are stored inside this box, proportions untouched. */
+const COVER_MAX_EDGE = 1800;
 
 /**
  * Re-encodes an uploaded image to webp under public/uploads/<kind>/ and
- * reports where it landed plus its intrinsic size.
+ * reports where it landed, its intrinsic size, and — for a cover — where its
+ * subject is.
  *
  * Re-encoding through sharp is also the validation step: it throws on
  * anything that isn't a decodable image regardless of the MIME type the
  * browser claimed, and it strips EXIF/metadata on the way out.
  *
- * Covers are cropped to 3:2 to match the blog's `.cover-frame`, the single
- * shape every cover is shown in; in-article images keep their own proportions.
+ * Nothing is cropped here any more, covers included. A cover used to be
+ * cropped to 3:2 on the way in to match the blog's `.cover-frame`, which made
+ * the upload irreversible and the frame unchangeable: moving that frame from
+ * 3:4 to 3:2 re-cropped every existing cover a second time, in the browser,
+ * from an image that had already lost the pixels the new frame wanted. The
+ * stored file is now the source of truth at its own proportions, and the
+ * frame does the cropping at display time via `object-fit: cover`.
+ *
+ * What makes that crop good rather than blind is the focus point, which is
+ * what `attention` is used for now: instead of cropping with the strategy, we
+ * ask sharp where the strategy *would* have cropped and keep the answer.
+ * `attentionX`/`attentionY` come back as coordinates in the resized image, so
+ * dividing by that image's dimensions gives proportions that hold at any
+ * size. The editor can override the result; this is only the opening bid.
+ *
+ * The probe runs at a deliberately small size — the strategy ranks regions,
+ * and regions do not move when the image is scaled, so paying for it at full
+ * resolution buys nothing. It cannot run on a multi-page image (sharp: "Resize
+ * strategy is not supported for multi-page images"), so an animated cover
+ * falls back to dead centre.
  *
  * An animated GIF or WebP keeps its animation: sharp only reads the first
  * frame unless it is told the input has pages, and the encoder only writes
@@ -81,14 +108,14 @@ export async function saveImage(file: File, kind: UploadKind, slugHint: string):
   let encoded: Buffer;
   let width = 0;
   let height = 0;
+  let focus: Focus = CENTRE_FOCUS;
   try {
     const animated = ((await sharp(buffer).metadata()).pages ?? 1) > 1;
     const base = sharp(buffer, { animated });
     const pipeline = animated ? base : base.rotate();
-    const result = await (kind === "covers"
-      ? pipeline.resize({ width: 1800, height: 1200, fit: "cover" })
-      : pipeline.resize({ width: CONTENT_MAX_EDGE, height: CONTENT_MAX_EDGE, fit: "inside", withoutEnlargement: true })
-    )
+    const maxEdge = kind === "covers" ? COVER_MAX_EDGE : CONTENT_MAX_EDGE;
+    const result = await pipeline
+      .resize({ width: maxEdge, height: maxEdge, fit: "inside", withoutEnlargement: true })
       .webp({ quality: 82 })
       .toBuffer({ resolveWithObject: true });
     encoded = result.data;
@@ -96,6 +123,11 @@ export async function saveImage(file: File, kind: UploadKind, slugHint: string):
     // An animated webp reports the whole frame strip in `height`; the blog
     // reserves space per frame, so it needs the height of one page.
     height = result.info.pageHeight ?? result.info.height;
+
+    // Probed on the encoded result rather than the upload: it is the file the
+    // focus will actually be applied to, and it is the smaller of the two.
+    // Only covers are framed, so only covers need the answer.
+    if (kind === "covers") focus = await detectFocus(encoded, animated);
   } catch (err) {
     throw new UploadError({
       reason: "decode",
@@ -130,5 +162,5 @@ export async function saveImage(file: File, kind: UploadKind, slugHint: string):
     });
   }
 
-  return { src: `/uploads/${kind}/${filename}`, width, height };
+  return { src: `/uploads/${kind}/${filename}`, width, height, focus };
 }

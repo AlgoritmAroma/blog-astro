@@ -507,12 +507,114 @@ button:disabled {
   margin-bottom: 16px;
 }
 
+/* Shown at the width the blog shows it, not as a thumbnail. A cover is
+   cropped to 3:2 on upload, and at 140px wide the editor could not see what
+   the crop had taken — a beheaded portrait and a well-framed one look
+   identical that small. `aspect-ratio` is set inline, per field: covers get
+   the blog's 3:2, an in-article image keeps whatever proportions it was
+   stored at, capped so a tall one doesn't push the form off screen. */
 .admin-image-preview {
-  width: 140px;
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  max-height: 420px;
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid #e4ddd0;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+/* ---------- cover focus picker ---------- */
+
+.cover-focus {
+  display: grid;
+  /* Two panels while there's room for both to stay readable; stacked below
+     that, since a 200px-wide source image is not something you can aim at. */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.cover-focus__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cover-focus__caption {
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.cover-focus__source {
+  position: relative;
+  /* Shrink-wrapped to the image on purpose. The click handler turns pointer
+     coordinates into percentages using this box's rect, and the marker is
+     positioned in percentages of it — so any letterboxing between box and
+     image would put both of them in a different coordinate space than the
+     picture the editor is aiming at. Hugging the image keeps the two
+     identical, whatever shape gets uploaded. */
+  display: inline-block;
+  align-self: flex-start;
+  max-width: 100%;
+  border-radius: 8px;
+  /* A box-shadow rather than a border, for the same reason: a border is part
+     of the box and shows up in getBoundingClientRect(), which would offset
+     every reading by its width. This draws the same hairline outside the
+     layout, and leaves `outline` free for the focus ring. */
+  box-shadow: 0 0 0 1px #e4ddd0;
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.cover-focus__source:focus-visible {
+  outline: 2px solid #c98b52;
+  outline-offset: 2px;
+}
+
+.cover-focus__source img {
+  display: block;
+  /* Bounded on both axes, sized by neither: the image keeps its own
+     proportions and the box takes whatever that comes out as. A tall portrait
+     is capped by the height, a wide panorama by the width. */
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 420px;
+  user-select: none;
+}
+
+.cover-focus__marker {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  /* Two rings rather than a solid dot: the cover underneath is arbitrary, and
+     a single colour disappears against something. */
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 1px 6px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.cover-focus__frame {
+  position: relative;
+  border-radius: 8px;
+  border: 1px solid #e4ddd0;
+  overflow: hidden;
+  background: #f6f2ea;
+}
+
+.cover-focus__frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* Mirrors the blog's `.cover-frame img` exactly — this panel is only
+     honest while the two stay the same. */
+  object-fit: cover;
 }
 
 .admin-swatches {

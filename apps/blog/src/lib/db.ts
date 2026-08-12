@@ -104,6 +104,14 @@ async function initSchema(): Promise<void> {
       -- Was 1000: a new article opened with a thousand views nobody had made.
       -- The counter is the real number now, so it starts where the truth does.
       ALTER TABLE posts ALTER COLUMN views SET DEFAULT 0;
+
+      -- Where the subject of the cover sits, in percent of the image's own
+      -- width and height. Covers are no longer cropped when uploaded, so the
+      -- 3:2 frame crops them at display time and this is what tells it which
+      -- part to keep. NULL means nobody has said — the frame falls back to
+      -- dead centre, which is exactly what every cover did before this.
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS cover_focus_x SMALLINT;
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS cover_focus_y SMALLINT;
       `
   );
 

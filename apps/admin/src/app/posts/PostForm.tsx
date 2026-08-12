@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useMemo, useState } from "react";
 import BlockEditor, { stripIds, withIds, type EditorBlock } from "@/components/BlockEditor";
 import ImageField from "@/components/ImageField";
+import CoverFocusPicker from "@/components/CoverFocusPicker";
 import LeaveGuard from "@/components/LeaveGuard";
 import { PAGE_BACKGROUNDS, DEFAULT_BACKGROUND, type Block } from "@/lib/blocks";
 import { pluralRu } from "@/lib/format";
@@ -19,6 +20,7 @@ export type PostFormValues = {
   readingTime: number | null;
   cover: string;
   coverAlt: string;
+  coverFocus: { x: number; y: number };
   bgColor: string;
   blocks: Block[];
 };
@@ -79,6 +81,11 @@ export default function PostForm({
   );
   const [cover, setCover] = useState(initialValues?.cover ?? "");
   const [coverAlt, setCoverAlt] = useState(initialValues?.coverAlt ?? "");
+  const [coverFocus, setCoverFocus] = useState(initialValues?.coverFocus ?? { x: 50, y: 50 });
+  // Only known for a cover uploaded in this session — the stored path is all
+  // the DB keeps. Zero means "don't claim anything about the size", which is
+  // what the picker's small-image warning checks for.
+  const [coverSize, setCoverSize] = useState({ width: 0, height: 0 });
   const [bgColor, setBgColor] = useState(initialValues?.bgColor || DEFAULT_BACKGROUND);
   const [blocks, setBlocks] = useState<EditorBlock[]>(() => withIds(initialValues?.blocks ?? []));
 
@@ -98,6 +105,7 @@ export default function PostForm({
       readingTime: readingTime.trim() === "" ? null : Number(readingTime) || null,
       cover,
       coverAlt,
+      coverFocus,
       bgColor,
       blocks: stripIds(blocks),
     }),
@@ -112,6 +120,7 @@ export default function PostForm({
       readingTime,
       cover,
       coverAlt,
+      coverFocus,
       bgColor,
       blocks,
     ]
@@ -132,6 +141,7 @@ export default function PostForm({
       readingTime: initialValues?.readingTime ?? null,
       cover: initialValues?.cover ?? "",
       coverAlt: initialValues?.coverAlt ?? "",
+      coverFocus: initialValues?.coverFocus ?? { x: 50, y: 50 },
       bgColor: initialValues?.bgColor || DEFAULT_BACKGROUND,
       blocks: initialValues?.blocks ?? [],
     })
@@ -188,6 +198,9 @@ export default function PostForm({
     setReadingTime(draft.values.readingTime == null ? "" : String(draft.values.readingTime));
     setCover(draft.values.cover);
     setCoverAlt(draft.values.coverAlt);
+    // A draft saved before the picker existed has no focus pair — restoring
+    // `undefined` would blank a set focus, so the current one stands.
+    setCoverFocus(draft.values.coverFocus ?? { x: 50, y: 50 });
     setBgColor(draft.values.bgColor || DEFAULT_BACKGROUND);
     setBlocks(withIds(draft.values.blocks ?? []));
     setFoundDraft(null);
@@ -311,11 +324,30 @@ export default function PostForm({
           kind="covers"
           slugHint={slugHint}
           label="Обложка статьи (она же превью в списке блога)"
-          aspect="3 / 2"
           value={cover}
-          onChange={({ src }) => setCover(src)}
+          showPreview={false}
+          onChange={({ src, width, height, focus }) => {
+            setCover(src);
+            setCoverSize({ width, height });
+            // A fresh upload brings the server's guess at where its subject
+            // is. Keeping the previous cover's focus instead would frame the
+            // new image by the old one's composition.
+            setCoverFocus(focus);
+          }}
         />
         <input type="hidden" name="cover" value={cover} />
+        <input type="hidden" name="coverFocusX" value={coverFocus.x} />
+        <input type="hidden" name="coverFocusY" value={coverFocus.y} />
+
+        {cover && (
+          <CoverFocusPicker
+            src={cover}
+            width={coverSize.width}
+            height={coverSize.height}
+            focus={coverFocus}
+            onChange={setCoverFocus}
+          />
+        )}
 
         <div className="admin-form-field">
           <label htmlFor="coverAlt">ALT обложки</label>

@@ -15,7 +15,10 @@ export default function PostCard({ post }: { post: PostMeta }) {
             alt={post.title}
             fill
             sizes="(max-width: 720px) 100vw, 360px"
-            style={{ objectFit: "cover" }}
+            style={{
+              objectFit: "cover",
+              objectPosition: `${post.coverFocus.x}% ${post.coverFocus.y}%`,
+            }}
           />
         </div>
       </Link>

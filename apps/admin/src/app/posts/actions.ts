@@ -29,8 +29,22 @@ type ParsedFields = {
   readingTime: number | null;
   cover: string;
   coverAlt: string;
+  coverFocus: { x: number; y: number };
   bgColor: string;
 };
+
+/**
+ * The focus pair ends up inside a CSS `object-position` on the blog, so it is
+ * narrowed to two integers 0–100 here rather than passed through as text. A
+ * number cannot carry a `;` out of the style attribute, which makes the whole
+ * class of injection this would otherwise invite impossible by construction
+ * instead of by escaping.
+ */
+function parseFocusValue(raw: FormDataEntryValue | null): number {
+  const value = Number(String(raw ?? "").trim());
+  if (!Number.isFinite(value)) return 50;
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
 
 /** Long enough for any real SEO title (Google shows ~60), short enough that a
  * pasted article body can't end up in the `<title>`. */
@@ -60,6 +74,10 @@ async function parseFields(
   const bgRaw = String(formData.get("bgColor") ?? "").trim();
   const coverRaw = String(formData.get("cover") ?? "").trim();
   const coverAlt = stripInlineHtml(String(formData.get("coverAlt") ?? "").trim()).slice(0, 300);
+  const coverFocus = {
+    x: parseFocusValue(formData.get("coverFocusX")),
+    y: parseFocusValue(formData.get("coverFocusY")),
+  };
 
   if (!title || !excerpt || !publishedAt) {
     return { ok: false, error: "Заполните заголовок, краткое описание и дату публикации." };
@@ -118,6 +136,7 @@ async function parseFields(
       readingTime,
       cover,
       coverAlt,
+      coverFocus,
       bgColor: isPageBackground(bgRaw) ? bgRaw : DEFAULT_BACKGROUND,
     },
   };
@@ -134,6 +153,7 @@ function toInput(fields: ParsedFields): PostInput {
     category: fields.category,
     cover: fields.cover,
     coverAlt: fields.coverAlt,
+    coverFocus: fields.coverFocus,
     bgColor: fields.bgColor,
     publishedAt: fields.publishedAt,
     readingTime: fields.readingTime,

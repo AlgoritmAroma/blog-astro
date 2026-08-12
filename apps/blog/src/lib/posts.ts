@@ -19,6 +19,8 @@ type PostRow = {
   category: string;
   cover: string;
   cover_alt: string | null;
+  cover_focus_x: number | null;
+  cover_focus_y: number | null;
   bg_color: string | null;
   blocks: unknown;
   published_at: string;
@@ -42,6 +44,10 @@ function rowToMeta(row: PostRow): PostMeta {
     category: row.category,
     cover: row.cover,
     coverAlt: row.cover_alt || row.title,
+    // NULL is every cover that predates the focus picker. Centre is what the
+    // frame did with them before, so falling back to it changes nothing for
+    // an article nobody has re-opened.
+    coverFocus: { x: row.cover_focus_x ?? 50, y: row.cover_focus_y ?? 50 },
     // The estimate is only a fallback: once the editor puts a number in the
     // form it wins, and re-editing the body never quietly moves it.
     readingTime: row.reading_time ?? readingTimeFromText(row.content),
