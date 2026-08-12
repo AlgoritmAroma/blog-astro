@@ -9,7 +9,7 @@ export default function PostCard({ post }: { post: PostMeta }) {
 
   return (
     <article className="post-card">
-      <Link href={href} style={{ display: "block" }}>
+      <Link href={href} className="post-card__cover-link">
         <div
           className="cover-frame"
           style={{ width: "100%", aspectRatio: coverAspectRatio(post.coverSize, "card") }}
