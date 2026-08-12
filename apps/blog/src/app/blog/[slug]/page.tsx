@@ -93,13 +93,23 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
       <CloudDivider fill={post.bgColor} />
 
-      <section style={{ background: post.bgColor, paddingBottom: 96 }}>
+      {/* `flow-root` is load-bearing: the cover's negative top margin is on
+          this section's first child, and without a block formatting context
+          it collapses straight through the section's top edge and drags the
+          whole beige block up with it. That is what has been hiding the cloud
+          divider — the background started 10px above the wave and painted
+          over all 90px of it. With the context established, the margin moves
+          the cover alone and the wave stays visible either side of it. */}
+      <section style={{ background: post.bgColor, paddingBottom: 96, display: "flow-root" }}>
         <div className="container" style={{ maxWidth: 820 }}>
           <div
             className="cover-frame"
             style={{
               width: "100%",
-              margin: "-140px auto 48px",
+              // Half the divider's 90px, so the cover tucks into the wave
+              // rather than clearing it or hiding it, and the gap underneath
+              // is the same order as the overlap above.
+              margin: "-45px auto 56px",
               maxWidth: 640,
               aspectRatio: coverAspectRatio(post.coverSize, "article"),
             }}
