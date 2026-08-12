@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MIN_PUBLIC_VIEWS, type PostMeta } from "@/lib/blog";
+import { coverAspectRatio } from "@/lib/cover-frame";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
 
 export default function PostCard({ post }: { post: PostMeta }) {
@@ -9,7 +10,10 @@ export default function PostCard({ post }: { post: PostMeta }) {
   return (
     <article className="post-card">
       <Link href={href} style={{ display: "block" }}>
-        <div className="cover-frame" style={{ width: "100%" }}>
+        <div
+          className="cover-frame"
+          style={{ width: "100%", aspectRatio: coverAspectRatio(post.coverSize, "card") }}
+        >
           <Image
             src={post.cover}
             alt={post.title}

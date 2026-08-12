@@ -21,6 +21,8 @@ type PostRow = {
   cover_alt: string | null;
   cover_focus_x: number | null;
   cover_focus_y: number | null;
+  cover_width: number | null;
+  cover_height: number | null;
   bg_color: string | null;
   blocks: unknown;
   published_at: string;
@@ -48,6 +50,10 @@ function rowToMeta(row: PostRow): PostMeta {
     // frame did with them before, so falling back to it changes nothing for
     // an article nobody has re-opened.
     coverFocus: { x: row.cover_focus_x ?? 50, y: row.cover_focus_y ?? 50 },
+    coverSize:
+      row.cover_width && row.cover_height
+        ? { width: row.cover_width, height: row.cover_height }
+        : null,
     // The estimate is only a fallback: once the editor puts a number in the
     // form it wins, and re-editing the body never quietly moves it.
     readingTime: row.reading_time ?? readingTimeFromText(row.content),
