@@ -643,6 +643,19 @@ h3 {
   cursor: default;
 }
 
+/* ---------- post grid ---------- */
+
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 48px 32px;
+  /* Not `stretch`, which is the grid default. Cover frames take their shape
+     from the picture now, so two cards in a row can legitimately differ in
+     height — and stretching the shorter one to match left a slab of empty
+     white under its "Читать далее". Each card ends where its content ends. */
+  align-items: start;
+}
+
 /* ---------- post card ---------- */
 
 /* Same white-on-beige panel as the rubric sidebar, so the grid reads as a row
@@ -650,7 +663,6 @@ h3 {
 .post-card {
   display: flex;
   flex-direction: column;
-  height: 100%;
   background: #fff;
   border: 1px solid var(--orange-12);
   border-radius: 24px;

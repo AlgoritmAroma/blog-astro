@@ -1,7 +1,13 @@
 /**
- * One-off, idempotent: give every cover that predates the focus picker a
- * focus point, so old articles frame as well as new ones without anyone
- * opening them in the editor.
+ * One-off, idempotent: fill in what the blog needs to frame a cover well —
+ * the file's real dimensions and a focus point — for every article that
+ * predates those columns, so old posts frame as well as new ones without
+ * anyone opening them in the editor.
+ *
+ * The dimensions matter more than the focus: the frame's shape is derived
+ * from them, and an article without them falls back to a fixed 3:2 that cuts
+ * a portrait cover in half. The focus only decides which part survives when
+ * the frame genuinely cannot fit the whole picture.
  *
  * Run via `npm run covers:focus` (report only) and `-- --apply` to write.
  *
@@ -19,6 +25,7 @@
  */
 import fs from "fs";
 import path from "path";
+import sharp from "sharp";
 import { pool, query } from "../src/lib/db";
 import { detectFocus, CENTRE_FOCUS } from "../src/lib/cover-focus";
 
@@ -67,6 +74,7 @@ async function main() {
   const rows = await query<Row>(
     `SELECT id, slug, cover FROM posts
      WHERE cover_focus_x IS NULL OR cover_focus_y IS NULL
+        OR cover_width IS NULL OR cover_height IS NULL
      ORDER BY id`
   );
 
@@ -77,6 +85,7 @@ async function main() {
 
   let updated = 0;
   let missing = 0;
+  let failed = 0;
 
   for (const row of rows) {
     const file = resolveCover(row.cover, roots);
@@ -90,30 +99,45 @@ async function main() {
     }
 
     const buffer = await fs.promises.readFile(file);
-    const focus = await detectFocus(buffer, false);
+    const meta = await sharp(buffer).metadata();
+    // An animated file stacks its frames in `height`; one frame is the shape
+    // the reader sees, so that is the shape the frame has to match.
+    const size = { width: meta.width ?? 0, height: meta.pageHeight ?? meta.height ?? 0 };
+
+    if (!size.width || !size.height) {
+      console.log(`  ОШИБКА   ${row.slug} — не удалось прочитать размеры ${row.cover}`);
+      failed++;
+      continue;
+    }
+
+    const focus = await detectFocus(buffer, (meta.pages ?? 1) > 1);
     const centred = focus.x === CENTRE_FOCUS.x && focus.y === CENTRE_FOCUS.y;
 
     if (apply) {
-      await query(`UPDATE posts SET cover_focus_x = $1, cover_focus_y = $2 WHERE id = $3`, [
-        focus.x,
-        focus.y,
-        row.id,
-      ]);
+      await query(
+        `UPDATE posts SET cover_focus_x = $1, cover_focus_y = $2,
+                          cover_width = $3, cover_height = $4
+         WHERE id = $5`,
+        [focus.x, focus.y, size.width, size.height, row.id]
+      );
     }
 
     console.log(
-      `  ${apply ? "записано " : "посчитано"} ${row.slug} → ${focus.x}% / ${focus.y}%` +
-        (centred ? " (совпало с центром)" : "")
+      `  ${apply ? "записано " : "посчитано"} ${row.slug} → ${size.width}×${size.height}, ` +
+        `фокус ${focus.x}% / ${focus.y}%` +
+        (centred ? " (совпал с центром)" : "")
     );
     updated++;
   }
 
   console.log(
-    `\n${apply ? "Готово." : "Итого."} Обложек с фокусом: ${updated}, файл не найден: ${missing}.` +
+    `\n${apply ? "Готово." : "Итого."} Обработано обложек: ${updated}, ` +
+      `файл не найден: ${missing}, ошибок: ${failed}.` +
       (missing > 0
         ? "\nНенайденные — это обложки, которых нет в этом контейнере; они остаются по центру."
         : "")
   );
+  if (failed > 0) process.exitCode = 1;
 }
 
 main()

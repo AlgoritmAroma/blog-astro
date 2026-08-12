@@ -9,6 +9,7 @@ import Comments from "@/components/Comments";
 import PostBlocks from "@/components/PostBlocks";
 import ViewTracker from "@/components/ViewTracker";
 import { stripInlineHtml } from "@/lib/blocks";
+import { coverAspectRatio } from "@/lib/cover-frame";
 import { getPostBySlug, getRelatedPosts } from "@/lib/posts";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
 import { MIN_PUBLIC_VIEWS } from "@/lib/blog";
@@ -100,6 +101,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               width: "100%",
               margin: "-140px auto 48px",
               maxWidth: 640,
+              aspectRatio: coverAspectRatio(post.coverSize, "article"),
             }}
           >
             <Image
@@ -156,13 +158,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <h2 style={{ marginBottom: 32, fontSize: "1.6rem", color: "var(--marsh)" }}>
               Похожие статьи
             </h2>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-                gap: "48px 32px",
-              }}
-            >
+            <div className="post-grid">
               {related.map((p) => (
                 <PostCard key={p.slug} post={p} />
               ))}

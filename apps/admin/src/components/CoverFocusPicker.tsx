@@ -1,11 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { coverAspectRatio } from "@/lib/cover-frame";
 
 export type Focus = { x: number; y: number };
-
-/** The one shape a cover is ever shown in — `.cover-frame` on the blog. */
-const FRAME_RATIO = "3 / 2";
 
 /** Below this the frame has to upscale, and no crop makes a small image
  * sharp. The cover is stored at whatever it was uploaded at now (nothing is
@@ -21,13 +19,19 @@ function clamp(value: number): number {
 }
 
 /**
- * Lets the editor say which part of the cover the 3:2 frame should keep.
+ * Lets the editor say which part of the cover to keep when the frame cannot
+ * take all of it.
  *
  * Two panels, because they answer different questions and one image cannot
  * answer both: on the left the cover as stored, whole, with the focus point
  * marked — that is where you aim. On the right the frame the blog will show,
  * cropped live — that is what you get. Editing without the second panel is
  * guessing; editing without the first is aiming at something you cannot see.
+ *
+ * The right panel takes its shape from `coverAspectRatio`, the same function
+ * the blog's card uses, so the two cannot disagree. For most uploads it comes
+ * out the same shape as the original and nothing is cropped at all — which is
+ * itself worth showing, since it is the answer to "why is my picture cut".
  *
  * The point is stored as percentages and handed to CSS `object-position`,
  * which frames it as closely as the overflow allows and clamps by itself at
@@ -77,6 +81,12 @@ export default function CoverFocusPicker({
   const objectPosition = `${focus.x}% ${focus.y}%`;
   const tooSmall = width > 0 && width < MIN_COMFORTABLE_WIDTH;
 
+  const size = width > 0 && height > 0 ? { width, height } : null;
+  const frameRatio = coverAspectRatio(size, "card");
+  // Within a percent, the frame is the picture's own shape — so the crop is
+  // nil and saying "cropped to 3:2" would be a lie the editor can see through.
+  const cropped = size ? Math.abs(size.width / size.height - frameRatio) > 0.01 : true;
+
   return (
     <div className="admin-form-field">
       <label>Кадрирование обложки</label>
@@ -119,8 +129,8 @@ export default function CoverFocusPicker({
         </div>
 
         <div className="cover-focus__panel">
-          <span className="cover-focus__caption">Так будет на сайте</span>
-          <div className="cover-focus__frame" style={{ aspectRatio: FRAME_RATIO }}>
+          <span className="cover-focus__caption">Так будет в списке блога</span>
+          <div className="cover-focus__frame" style={{ aspectRatio: frameRatio }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={src} alt="" style={{ objectPosition }} />
           </div>
@@ -128,8 +138,18 @@ export default function CoverFocusPicker({
       </div>
 
       <p className="admin-hint">
-        Обложка сохраняется целиком, как загружена — обрезает её рамка 3:2 уже на сайте. Точка
-        показывает, что рамка обязана оставить в кадре: {focus.x}% / {focus.y}%. Стрелками — точнее.
+        {cropped ? (
+          <>
+            Обложка сохраняется целиком, как загружена. В ленте она не помещается по высоте, и
+            рамка её обрежет — точка показывает, что она обязана оставить в кадре: {focus.x}% /{" "}
+            {focus.y}%. Стрелками — точнее.
+          </>
+        ) : (
+          <>
+            Обложка помещается в рамку целиком — на сайте она видна вся, ничего не обрезается.
+            Точка пригодится, только если загрузить более вытянутый кадр.
+          </>
+        )}
       </p>
 
       {tooSmall && (

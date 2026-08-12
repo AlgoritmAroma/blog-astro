@@ -33,13 +33,7 @@ export default function BlogGrid({ posts, categories }: { posts: PostMeta[]; cat
     <div className="blog-layout">
       <div>
         {pagePosts.length > 0 ? (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-              gap: "48px 32px",
-            }}
-          >
+          <div className="post-grid">
             {pagePosts.map((post) => (
               <PostCard key={post.slug} post={post} />
             ))}

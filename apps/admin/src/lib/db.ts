@@ -112,6 +112,13 @@ async function initSchema(): Promise<void> {
       -- dead centre, which is exactly what every cover did before this.
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS cover_focus_x SMALLINT;
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS cover_focus_y SMALLINT;
+
+      -- Intrinsic size of the cover file. The frame it is shown in is derived
+      -- from these rather than fixed, so a portrait cover is shown whole
+      -- instead of losing half its height to a hardcoded 3:2. NULL means the
+      -- size was never recorded — the frame falls back to 3:2, as before.
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS cover_width INTEGER;
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS cover_height INTEGER;
       `
   );
 
