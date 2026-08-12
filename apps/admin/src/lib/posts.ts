@@ -18,6 +18,8 @@ type PostRow = {
   cover_alt: string | null;
   cover_focus_x: number | null;
   cover_focus_y: number | null;
+  cover_width: number | null;
+  cover_height: number | null;
   bg_color: string | null;
   blocks: unknown;
   published_at: string;
@@ -73,6 +75,9 @@ export type PostInput = {
    * `object-position`. Never null on the way in — the form always sends a
    * pair, defaulting to the centre for a cover uploaded before the picker. */
   coverFocus: { x: number; y: number };
+  /** Intrinsic size of the cover file. null when unknown — an article saved
+   * before the column existed whose cover nobody has re-picked since. */
+  coverSize: { width: number; height: number } | null;
   bgColor: string;
   publishedAt: string;
   /** null = estimate it from the text. */
@@ -104,6 +109,10 @@ export async function getPostById(id: number): Promise<(PostInput & { id: number
     cover: row.cover,
     coverAlt: row.cover_alt ?? "",
     coverFocus: { x: row.cover_focus_x ?? 50, y: row.cover_focus_y ?? 50 },
+    coverSize:
+      row.cover_width && row.cover_height
+        ? { width: row.cover_width, height: row.cover_height }
+        : null,
     bgColor: row.bg_color || DEFAULT_BACKGROUND,
     publishedAt: row.published_at,
     readingTime: row.reading_time,
@@ -115,8 +124,8 @@ export async function createPost(input: PostInput): Promise<number> {
     // `views` is left to its column default of 0 — a new article has been read
     // by nobody yet, and that is the number.
     `INSERT INTO posts (slug, title, meta_title, excerpt, content, blocks, category, cover, cover_alt,
-     cover_focus_x, cover_focus_y, bg_color, published_at, reading_time)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14)
+     cover_focus_x, cover_focus_y, cover_width, cover_height, bg_color, published_at, reading_time)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
      RETURNING id`,
     [
       input.slug,
@@ -130,6 +139,8 @@ export async function createPost(input: PostInput): Promise<number> {
       input.coverAlt,
       input.coverFocus.x,
       input.coverFocus.y,
+      input.coverSize?.width ?? null,
+      input.coverSize?.height ?? null,
       input.bgColor,
       input.publishedAt,
       input.readingTime,
@@ -142,9 +153,10 @@ export async function updatePost(id: number, input: PostInput): Promise<void> {
   await query(
     // Deliberately no `views` column here — see PostInput.
     `UPDATE posts SET slug=$1, title=$2, meta_title=$3, excerpt=$4, content=$5, blocks=$6::jsonb,
-     category=$7, cover=$8, cover_alt=$9, cover_focus_x=$10, cover_focus_y=$11, bg_color=$12,
-     published_at=$13, reading_time=$14, updated_at=now()
-     WHERE id=$15`,
+     category=$7, cover=$8, cover_alt=$9, cover_focus_x=$10, cover_focus_y=$11,
+     cover_width=$12, cover_height=$13, bg_color=$14, published_at=$15, reading_time=$16,
+     updated_at=now()
+     WHERE id=$17`,
     [
       input.slug,
       input.title,
@@ -157,6 +169,8 @@ export async function updatePost(id: number, input: PostInput): Promise<void> {
       input.coverAlt,
       input.coverFocus.x,
       input.coverFocus.y,
+      input.coverSize?.width ?? null,
+      input.coverSize?.height ?? null,
       input.bgColor,
       input.publishedAt,
       input.readingTime,

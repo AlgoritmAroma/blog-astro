@@ -31,11 +31,14 @@ export type PostMeta = {
   category: string;
   cover: string;
   coverAlt: string;
-  /** Which part of the cover the 3:2 frame keeps, as CSS `object-position`
-   * percentages. Covers are stored uncropped, so without this the frame would
-   * fall back to taking the middle — which is where the subject usually
-   * isn't. */
+  /** Which part of the cover survives when the frame *does* have to crop, as
+   * CSS `object-position` percentages. A cover whose proportions fall inside
+   * the frame's allowed band isn't cropped at all and ignores this; it
+   * matters for the ones clamped at the edge of the band. */
   coverFocus: { x: number; y: number };
+  /** Intrinsic size of the cover file, or null when it was never recorded.
+   * The frame's shape is derived from it — see lib/cover-frame.ts. */
+  coverSize: { width: number; height: number } | null;
   /** Whole minutes — the editor's override if they set one, otherwise
    * estimated from the article text. */
   readingTime: number;

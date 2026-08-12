@@ -21,6 +21,7 @@ export type PostFormValues = {
   cover: string;
   coverAlt: string;
   coverFocus: { x: number; y: number };
+  coverSize: { width: number; height: number } | null;
   bgColor: string;
   blocks: Block[];
 };
@@ -82,10 +83,12 @@ export default function PostForm({
   const [cover, setCover] = useState(initialValues?.cover ?? "");
   const [coverAlt, setCoverAlt] = useState(initialValues?.coverAlt ?? "");
   const [coverFocus, setCoverFocus] = useState(initialValues?.coverFocus ?? { x: 50, y: 50 });
-  // Only known for a cover uploaded in this session — the stored path is all
-  // the DB keeps. Zero means "don't claim anything about the size", which is
-  // what the picker's small-image warning checks for.
-  const [coverSize, setCoverSize] = useState({ width: 0, height: 0 });
+  // Kept in the DB now, because the blog derives the frame's shape from it —
+  // so an edit must post back the size it was given rather than dropping it.
+  // null means "never recorded", which the blog reads as its default frame.
+  const [coverSize, setCoverSize] = useState<{ width: number; height: number } | null>(
+    initialValues?.coverSize ?? null
+  );
   const [bgColor, setBgColor] = useState(initialValues?.bgColor || DEFAULT_BACKGROUND);
   const [blocks, setBlocks] = useState<EditorBlock[]>(() => withIds(initialValues?.blocks ?? []));
 
@@ -106,6 +109,7 @@ export default function PostForm({
       cover,
       coverAlt,
       coverFocus,
+      coverSize,
       bgColor,
       blocks: stripIds(blocks),
     }),
@@ -121,6 +125,7 @@ export default function PostForm({
       cover,
       coverAlt,
       coverFocus,
+      coverSize,
       bgColor,
       blocks,
     ]
@@ -142,6 +147,7 @@ export default function PostForm({
       cover: initialValues?.cover ?? "",
       coverAlt: initialValues?.coverAlt ?? "",
       coverFocus: initialValues?.coverFocus ?? { x: 50, y: 50 },
+      coverSize: initialValues?.coverSize ?? null,
       bgColor: initialValues?.bgColor || DEFAULT_BACKGROUND,
       blocks: initialValues?.blocks ?? [],
     })
@@ -201,6 +207,7 @@ export default function PostForm({
     // A draft saved before the picker existed has no focus pair — restoring
     // `undefined` would blank a set focus, so the current one stands.
     setCoverFocus(draft.values.coverFocus ?? { x: 50, y: 50 });
+    setCoverSize(draft.values.coverSize ?? null);
     setBgColor(draft.values.bgColor || DEFAULT_BACKGROUND);
     setBlocks(withIds(draft.values.blocks ?? []));
     setFoundDraft(null);
@@ -338,12 +345,14 @@ export default function PostForm({
         <input type="hidden" name="cover" value={cover} />
         <input type="hidden" name="coverFocusX" value={coverFocus.x} />
         <input type="hidden" name="coverFocusY" value={coverFocus.y} />
+        <input type="hidden" name="coverWidth" value={coverSize?.width ?? ""} />
+        <input type="hidden" name="coverHeight" value={coverSize?.height ?? ""} />
 
         {cover && (
           <CoverFocusPicker
             src={cover}
-            width={coverSize.width}
-            height={coverSize.height}
+            width={coverSize?.width ?? 0}
+            height={coverSize?.height ?? 0}
             focus={coverFocus}
             onChange={setCoverFocus}
           />

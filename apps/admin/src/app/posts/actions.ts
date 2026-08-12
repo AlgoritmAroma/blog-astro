@@ -30,8 +30,23 @@ type ParsedFields = {
   cover: string;
   coverAlt: string;
   coverFocus: { x: number; y: number };
+  coverSize: { width: number; height: number } | null;
   bgColor: string;
 };
+
+/** Pixel dimensions of the stored cover. Comes from sharp via the upload
+ * endpoint, so a value outside this range means the form was tampered with
+ * rather than that someone has a 60000px image. `null` is a real answer —
+ * "size unknown" — and the blog falls back to its default frame for it. */
+function parseCoverSize(
+  rawWidth: FormDataEntryValue | null,
+  rawHeight: FormDataEntryValue | null
+): { width: number; height: number } | null {
+  const width = Number(String(rawWidth ?? "").trim());
+  const height = Number(String(rawHeight ?? "").trim());
+  const sane = (n: number) => Number.isInteger(n) && n > 0 && n <= 20000;
+  return sane(width) && sane(height) ? { width, height } : null;
+}
 
 /**
  * The focus pair ends up inside a CSS `object-position` on the blog, so it is
@@ -78,6 +93,7 @@ async function parseFields(
     x: parseFocusValue(formData.get("coverFocusX")),
     y: parseFocusValue(formData.get("coverFocusY")),
   };
+  const coverSize = parseCoverSize(formData.get("coverWidth"), formData.get("coverHeight"));
 
   if (!title || !excerpt || !publishedAt) {
     return { ok: false, error: "Заполните заголовок, краткое описание и дату публикации." };
@@ -137,6 +153,7 @@ async function parseFields(
       cover,
       coverAlt,
       coverFocus,
+      coverSize,
       bgColor: isPageBackground(bgRaw) ? bgRaw : DEFAULT_BACKGROUND,
     },
   };
@@ -154,6 +171,7 @@ function toInput(fields: ParsedFields): PostInput {
     cover: fields.cover,
     coverAlt: fields.coverAlt,
     coverFocus: fields.coverFocus,
+    coverSize: fields.coverSize,
     bgColor: fields.bgColor,
     publishedAt: fields.publishedAt,
     readingTime: fields.readingTime,
