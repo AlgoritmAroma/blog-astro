@@ -36,7 +36,16 @@ export default async function BlogHome() {
 
       <CloudDivider fill="#fbf2e1" />
 
-      <section style={{ background: "var(--beige-bg)", color: "var(--brown)", paddingBottom: 100 }}>
+      {/* The cloud divider ends flush against the beige, so without a top inset
+          the first row of cards starts right where the wave lands. */}
+      <section
+        style={{
+          background: "var(--beige-bg)",
+          color: "var(--brown)",
+          paddingTop: 40,
+          paddingBottom: 100,
+        }}
+      >
         <div className="container">
           <BlogGrid posts={posts} categories={categories} />
         </div>
