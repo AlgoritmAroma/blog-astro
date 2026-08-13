@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { involve, anticva } from "@/lib/fonts";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import YandexMetrika from "@/components/YandexMetrika";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default function RootLayout({
         <Header />
         <main style={{ paddingTop: 112 }}>{children}</main>
         <Footer />
+        <YandexMetrika />
       </body>
     </html>
   );
