@@ -3,6 +3,7 @@ name: Prod Deploy
 on:
   push:
     branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
   changes:
@@ -29,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: changes
     if: |
+      github.event_name == 'workflow_dispatch' ||
       needs.changes.outputs.blog    == 'true' ||
       needs.changes.outputs.admin   == 'true' ||
       needs.changes.outputs.compose == 'true'
@@ -44,7 +46,7 @@ jobs:
           password: ${{ secrets.GHCR_PAT }}
 
       - name: Build and push blog image
-        if: needs.changes.outputs.blog == 'true' || needs.changes.outputs.compose == 'true'
+        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.blog == 'true' || needs.changes.outputs.compose == 'true'
         env:
           IMAGE: ghcr.io/${{ github.repository }}-blog:${{ github.ref_name }}
         run: |
@@ -54,7 +56,7 @@ jobs:
           docker push $IMAGE
 
       - name: Build and push admin image
-        if: needs.changes.outputs.admin == 'true' || needs.changes.outputs.compose == 'true'
+        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.admin == 'true' || needs.changes.outputs.compose == 'true'
         env:
           IMAGE: ghcr.io/${{ github.repository }}-admin:${{ github.ref_name }}
         run: |
@@ -69,7 +71,7 @@ jobs:
     if: |
       always() &&
       needs.build.result != 'failure' &&
-      (needs.build.result == 'success' || needs.changes.outputs.compose == 'true')
+      (needs.build.result == 'success' || needs.changes.outputs.compose == 'true' || github.event_name == 'workflow_dispatch')
     steps:
       - uses: actions/checkout@v4
       - name: Copy compose.yaml to prod server
