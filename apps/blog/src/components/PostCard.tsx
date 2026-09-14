@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MIN_PUBLIC_VIEWS, type PostMeta } from "@/lib/blog";
+import { type PostMeta } from "@/lib/blog";
 import { coverAspectRatio } from "@/lib/cover-frame";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
+import { publicViews } from "@/lib/views";
 
 export default function PostCard({ post }: { post: PostMeta }) {
   const href = `/blog/${post.slug}`;
@@ -37,12 +38,8 @@ export default function PostCard({ post }: { post: PostMeta }) {
         <div className="post-card__footer">
           <div className="post-card__meta">
             <span>{formatDate(post.date)}</span>
-            {post.views >= MIN_PUBLIC_VIEWS && (
-              <>
-                <span>·</span>
-                <span>{formatViewCount(post.views)}</span>
-              </>
-            )}
+            <span>·</span>
+            <span>{formatViewCount(publicViews(post))}</span>
             <span>·</span>
             <span>{formatReadingTime(post.readingTime)} чтения</span>
           </div>

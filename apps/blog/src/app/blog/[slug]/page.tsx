@@ -12,7 +12,7 @@ import { stripInlineHtml } from "@/lib/blocks";
 import { coverAspectRatio } from "@/lib/cover-frame";
 import { getPostBySlug, getRelatedPosts } from "@/lib/posts";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
-import { MIN_PUBLIC_VIEWS } from "@/lib/blog";
+import { publicViews } from "@/lib/views";
 import { submitCommentAction } from "./actions";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -78,12 +78,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           <h1 style={{ fontSize: "var(--h2)", maxWidth: 820, margin: "16px 0" }}>{post.title}</h1>
           <div className="post-meta-row">
             <span>{formatDate(post.date)}</span>
-            {post.views >= MIN_PUBLIC_VIEWS && (
-              <>
-                <span>·</span>
-                <span>{formatViewCount(post.views)}</span>
-              </>
-            )}
+            <span>·</span>
+            <span>{formatViewCount(publicViews(post))}</span>
             <span>·</span>
             <span>{formatReadingTime(post.readingTime)} чтения</span>
             <ShareButtons title={post.title} compact />
