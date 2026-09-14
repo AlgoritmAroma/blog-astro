@@ -3,7 +3,7 @@ import { involve, anticva } from "@/lib/fonts";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import YandexMetrika from "@/components/YandexMetrika";
-import { mainSiteUrl } from "@/lib/site";
+import { mainSiteUrl, readerIsSignedIn } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,18 +24,19 @@ export const metadata: Metadata = {
 // nothing in practice.
 export const dynamic = "force-dynamic";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const mainSite = mainSiteUrl();
+  const signedIn = await readerIsSignedIn();
 
   return (
     <html lang="ru" className={`${involve.variable} ${anticva.variable}`}>
       <body>
         <div className="page-stars" aria-hidden="true" />
-        <Header mainSite={mainSite} />
+        <Header mainSite={mainSite} signedIn={signedIn} />
         <main style={{ paddingTop: 112 }}>{children}</main>
         <Footer mainSite={mainSite} />
         <YandexMetrika />
