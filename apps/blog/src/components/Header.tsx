@@ -2,17 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { MAIN_SITE_SECTIONS, accountLink, sectionHref } from "@/lib/main-site-links";
 
-// Paths on the main site, kept apart from its origin: the origin is whatever
-// the container is configured with (see lib/site.ts), so dev links to dev.
-const NAV_PATHS = [
-  { label: "Натальная карта", path: "/natal" },
-  { label: "Прогнозы", path: "/prediction" },
-  { label: "Совместимость", path: "/compatibility" },
-  { label: "Ответы на вопросы", path: "/answers" },
-];
-
-export default function Header({ mainSite }: { mainSite: string }) {
+export default function Header({
+  mainSite,
+  signedIn,
+}: {
+  mainSite: string;
+  signedIn: boolean;
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -31,9 +29,13 @@ export default function Header({ mainSite }: { mainSite: string }) {
   }, [menuOpen]);
 
   const navLinks: { label: string; href: string; internal?: boolean }[] = [
-    ...NAV_PATHS.map((item) => ({ label: item.label, href: `${mainSite}${item.path}` })),
+    ...MAIN_SITE_SECTIONS.map((section) => ({
+      label: section.label,
+      href: sectionHref(mainSite, section.path, signedIn),
+    })),
     { label: "Блог", href: "/", internal: true },
   ];
+  const account = accountLink(mainSite, signedIn);
 
   return (
     <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
@@ -60,8 +62,8 @@ export default function Header({ mainSite }: { mainSite: string }) {
       </nav>
 
       <div className="header-actions">
-        <a href={`${mainSite}/login`} className="btn">
-          Войти
+        <a href={account.href} className="btn">
+          {account.label}
         </a>
         <button
           type="button"
