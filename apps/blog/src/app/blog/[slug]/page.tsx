@@ -11,6 +11,7 @@ import ViewTracker from "@/components/ViewTracker";
 import { stripInlineHtml } from "@/lib/blocks";
 import { coverAspectRatio } from "@/lib/cover-frame";
 import { getPostBySlug, getRelatedPosts } from "@/lib/posts";
+import { mainSiteUrl } from "@/lib/site";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
 import { publicViews } from "@/lib/views";
 import { submitCommentAction } from "./actions";
@@ -66,7 +67,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
           <Breadcrumbs
             items={[
-              { label: "Главная", href: "https://aiastro.ru" },
+              { label: "Главная", href: mainSiteUrl() },
               { label: "Блог", href: "/" },
               { label: post.category },
               { label: post.title },
@@ -149,7 +150,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <p style={{ color: "var(--orange)", opacity: 0.85, marginBottom: 24 }}>
               Персональный расчёт, прогнозы и совместимость — бесплатно, за пару минут.
             </p>
-            <a href="https://aiastro.ru/login" className="btn">
+            <a href={`${mainSiteUrl()}/login`} className="btn">
               Попробовать бесплатно
             </a>
           </div>

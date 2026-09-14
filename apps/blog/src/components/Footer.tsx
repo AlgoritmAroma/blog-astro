@@ -1,6 +1,4 @@
-const MAIN_SITE = "https://aiastro.ru";
-
-export default function Footer() {
+export default function Footer({ mainSite }: { mainSite: string }) {
   return (
     <footer className="site-footer">
       <div className="footer-top">
@@ -15,12 +13,12 @@ export default function Footer() {
           </div>
 
           <div className="footer-link-area">
-            <a href={`${MAIN_SITE}/rules/privacy-policy`}>Политика конфиденциальности</a>
-            <a href={`${MAIN_SITE}/rules/personal-data-policy`}>Политика персональных данных</a>
+            <a href={`${mainSite}/rules/privacy-policy`}>Политика конфиденциальности</a>
+            <a href={`${mainSite}/rules/personal-data-policy`}>Политика персональных данных</a>
           </div>
 
           <div className="footer-link-area">
-            <a href={`${MAIN_SITE}/rules/oferta`}>Публичный договор-оферта</a>
+            <a href={`${mainSite}/rules/oferta`}>Публичный договор-оферта</a>
           </div>
         </div>
 
