@@ -731,10 +731,19 @@ h3 {
   padding: 16px 18px 18px;
 }
 
-/* The rubric pill is a flex item here, and flex items stretch by default —
-   without this it grows to the full width of the card. */
-.post-card__body > .tag {
-  align-self: flex-start;
+/* An article can be in several rubrics, so the pills wrap onto more lines
+   rather than stretching across the card. */
+.post-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
 }
 
 .post-card__title {

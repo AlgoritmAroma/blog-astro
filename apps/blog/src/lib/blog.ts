@@ -28,7 +28,9 @@ export type PostMeta = {
   metaTitle: string;
   excerpt: string;
   date: string;
-  category: string;
+  /** Every rubric the article is in, in the order the editor ticked them.
+   * Never empty for a saved article; the first is its main rubric. */
+  categories: string[];
   cover: string;
   coverAlt: string;
   /** Which part of the cover survives when the frame *does* have to crop, as

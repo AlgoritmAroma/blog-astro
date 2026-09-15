@@ -119,14 +119,28 @@ async function initSchema(): Promise<void> {
       -- size was never recorded — the frame falls back to 3:2, as before.
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS cover_width INTEGER;
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS cover_height INTEGER;
+
+      -- An article can sit in several rubrics. The old "category" column stays, holding the
+      -- first of them, so anything still reading the single column (the seed
+      -- script, a container from before this change) keeps working.
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS categories TEXT[] NOT NULL DEFAULT '{}';
       `
+  );
+
+  // An article saved with only the single rubric column — every one from
+  // before multi-rubric support, or one written by an older container during a
+  // rollout — gets that rubric as its list. Safe to repeat: a saved article
+  // always has at least one rubric, so only such rows are ever empty.
+  await pool.query(
+    `UPDATE posts SET categories = ARRAY[category]
+     WHERE cardinality(categories) = 0 AND category <> ''`
   );
 
   // Any rubric an existing post already uses becomes a real row, so the
   // sidebar can't lose a category that has articles in it.
   await pool.query(
     `INSERT INTO categories (name)
-     SELECT DISTINCT category FROM posts WHERE category <> ''
+     SELECT DISTINCT name FROM posts, unnest(categories) AS name WHERE name <> ''
      ON CONFLICT (name) DO NOTHING`
   );
 
@@ -160,7 +174,7 @@ async function dropRetiredSeedCategories(): Promise<void> {
   await pool.query(
     `DELETE FROM categories c
      WHERE c.name = ANY($1::text[])
-       AND NOT EXISTS (SELECT 1 FROM posts p WHERE p.category = c.name)`,
+       AND NOT EXISTS (SELECT 1 FROM posts p WHERE c.name = ANY(p.categories))`,
     [RETIRED_SEED_CATEGORIES]
   );
 }

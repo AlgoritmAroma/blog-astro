@@ -52,7 +52,7 @@ export async function deleteCategoryIfUnused(id: number): Promise<boolean> {
   const rows = await query<{ id: number }>(
     `DELETE FROM categories c
      WHERE c.id = $1
-       AND NOT EXISTS (SELECT 1 FROM posts p WHERE p.category = c.name)
+       AND NOT EXISTS (SELECT 1 FROM posts p WHERE c.name = ANY(p.categories))
      RETURNING c.id`,
     [id]
   );

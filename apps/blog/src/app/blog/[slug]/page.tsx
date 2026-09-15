@@ -68,13 +68,18 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             items={[
               { label: "Главная", href: "https://aiastro.ru" },
               { label: "Блог", href: "/" },
-              { label: post.category },
+              // A crumb is a single path, so it names the main rubric only.
+              ...(post.categories[0] ? [{ label: post.categories[0] }] : []),
               { label: post.title },
             ]}
           />
-          <span className="tag" style={{ margin: "20px 0", display: "inline-flex" }}>
-            {post.category}
-          </span>
+          <div className="post-tags">
+            {post.categories.map((name) => (
+              <span key={name} className="tag">
+                {name}
+              </span>
+            ))}
+          </div>
           <h1 style={{ fontSize: "var(--h2)", maxWidth: 820, margin: "16px 0" }}>{post.title}</h1>
           <div className="post-meta-row">
             <span>{formatDate(post.date)}</span>
