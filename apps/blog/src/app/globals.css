@@ -649,10 +649,6 @@ h3 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 48px 32px;
-  /* Not `stretch`, which is the grid default. Cover frames take their shape
-     from the picture now, so two cards in a row can legitimately differ in
-     height — and stretching the shorter one to match left a slab of empty
-     white under its "Читать далее". Each card ends where its content ends. */
   align-items: start;
 }
 
@@ -660,9 +656,14 @@ h3 {
 
 /* Same white-on-beige panel as the rubric sidebar, so the grid reads as a row
    of bounded cards rather than images with text floating under them. */
+/* Every card is the same height, whatever its cover and however much text it
+   has: short text leaves white space above the footer, long text is cut with
+   "......." (ClampedText). */
 .post-card {
+  --post-card-height: 554px;
   display: flex;
   flex-direction: column;
+  height: var(--post-card-height);
   background: #fff;
   border: 1px solid var(--orange-12);
   border-radius: 24px;
@@ -690,10 +691,16 @@ h3 {
    the card's. */
 .post-card__cover-link {
   display: block;
+  flex-shrink: 0;
   padding: 18px 18px 0;
 }
 
+/* The frame still follows the cover's proportions, but a fixed-height card
+   can't let a portrait cover take the room its title and text need. Past this
+   height the frame stops growing and the picture is cropped around the focus
+   point the editor set. */
 .post-card .cover-frame {
+  max-height: 240px;
   border: 1px solid var(--orange-12);
   border-radius: 16px;
 }
@@ -728,6 +735,7 @@ h3 {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
   padding: 16px 18px 18px;
 }
 
@@ -747,15 +755,36 @@ h3 {
   color: var(--apricot);
 }
 
+/* Takes whatever height the card has left, and ClampedText fills exactly
+   that — so the excerpt is what gives, never the footer. */
 .post-card__excerpt {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
   font-size: 0.95rem;
+  line-height: 1.5;
   opacity: 0.75;
   margin-bottom: 14px;
+}
+
+/* The "......." ClampedText puts where it cut the text. Set in the body face
+   everywhere: the headline face draws dots too small to read as "there's
+   more". */
+.clamped-text__more {
+  font-family: var(--font-involve), sans-serif;
+  letter-spacing: 0.04em;
+}
+
+/* At most three lines of title, so a long one can't squeeze the excerpt out. */
+.post-card__title {
+  max-height: calc(3 * 1.15em);
+  overflow: hidden;
 }
 
 /* Pushes the meta row and the CTA to the bottom edge so cards with titles of
    different lengths still line their footers up across the grid. */
 .post-card__footer {
+  flex-shrink: 0;
   margin-top: auto;
 }
 

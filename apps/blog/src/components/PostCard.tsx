@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import ClampedText from "@/components/ClampedText";
 import { type PostMeta } from "@/lib/blog";
 import { coverAspectRatio } from "@/lib/cover-frame";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
@@ -31,9 +32,9 @@ export default function PostCard({ post }: { post: PostMeta }) {
       <div className="post-card__body">
         <span className="tag">{post.category}</span>
         <Link href={href}>
-          <h3 className="post-card__title">{post.title}</h3>
+          <ClampedText as="h3" className="post-card__title" text={post.title} />
         </Link>
-        <p className="post-card__excerpt">{post.excerpt}</p>
+        <ClampedText className="post-card__excerpt" text={post.excerpt} />
 
         <div className="post-card__footer">
           <div className="post-card__meta">
