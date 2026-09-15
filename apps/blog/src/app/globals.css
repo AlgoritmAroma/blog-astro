@@ -848,11 +848,15 @@ h3 {
   gap: 8px;
 }
 
+/* 36px under the pills, not 20: the h1's 16px top margin collapses into this
+   one. The single pill this replaced was an inline box, whose margin didn't
+   collapse, so title, wave and cover all sat 16px lower — and moving to a
+   block wrapper had quietly lifted the whole article start by that much. */
 .post-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 20px 0;
+  margin: 20px 0 36px;
 }
 
 .post-card__title {
@@ -938,6 +942,15 @@ h3 {
   flex-wrap: wrap;
   font-size: var(--mini);
   opacity: 0.75;
+}
+
+/* At 360px and down the headline is set a step smaller so it fits, which
+   shortens the article's dark intro and lifted the wave and the cover with
+   it. This gives that room back under the meta row. */
+@media (max-width: 360px) {
+  .post-meta-row {
+    margin-bottom: 14px;
+  }
 }
 
 .post-share-block {
