@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
 import BlockEditor, { stripIds, withIds, type EditorBlock } from "@/components/BlockEditor";
 import ImageField from "@/components/ImageField";
 import CoverFocusPicker from "@/components/CoverFocusPicker";
@@ -8,7 +8,7 @@ import LeaveGuard from "@/components/LeaveGuard";
 import { PAGE_BACKGROUNDS, DEFAULT_BACKGROUND, type Block } from "@/lib/blocks";
 import { pluralRu } from "@/lib/format";
 import { slugify } from "@/lib/slugify";
-import type { PostFormState } from "./actions";
+import { createCategoryAction, type PostFormState } from "./actions";
 
 export type PostFormValues = {
   title: string;
@@ -67,6 +67,11 @@ export default function PostForm({
   const [excerpt, setExcerpt] = useState(initialValues?.excerpt ?? "");
   const [category, setCategory] = useState(initialValues?.category ?? "");
   const [newCategory, setNewCategory] = useState("");
+  // The rubrics the page was rendered with, plus any added from this form —
+  // those are already stored, so they belong in the list straight away.
+  const [categoryOptions, setCategoryOptions] = useState(categories);
+  const [categoryError, setCategoryError] = useState("");
+  const [addingCategory, startAddingCategory] = useTransition();
   // A new article defaults to *today in the editor's own timezone*. The
   // initialiser is guarded because it also runs on the server, where "today"
   // is whatever the container's clock says — the server therefore renders an
@@ -211,6 +216,30 @@ export default function PostForm({
     setBgColor(draft.values.bgColor || DEFAULT_BACKGROUND);
     setBlocks(withIds(draft.values.blocks ?? []));
     setFoundDraft(null);
+  }
+
+  function addCategory() {
+    if (!newCategory.trim()) {
+      setCategoryError("Введите название категории.");
+      return;
+    }
+    setCategoryError("");
+    startAddingCategory(async () => {
+      try {
+        const result = await createCategoryAction(newCategory);
+        if (!result.ok) {
+          setCategoryError(result.error);
+          return;
+        }
+        // The server may hand back an existing rubric's spelling (matching is
+        // case-insensitive), so the list is checked against what it returned.
+        setCategoryOptions((prev) => (prev.includes(result.name) ? prev : [...prev, result.name]));
+        setCategory(result.name);
+        setNewCategory("");
+      } catch {
+        setCategoryError("Не удалось сохранить категорию — попробуйте ещё раз.");
+      }
+    });
   }
 
   function discardDraft() {
@@ -386,8 +415,9 @@ export default function PostForm({
           <select
             id="category"
             className="admin-select"
-            value={categories.includes(category) || category === "" ? category : NEW_CATEGORY}
+            value={categoryOptions.includes(category) || category === "" ? category : NEW_CATEGORY}
             onChange={(e) => {
+              setCategoryError("");
               if (e.target.value === NEW_CATEGORY) {
                 setCategory(NEW_CATEGORY);
                 setNewCategory("");
@@ -399,7 +429,7 @@ export default function PostForm({
             <option value="" disabled>
               Выберите категорию
             </option>
-            {categories.map((name) => (
+            {categoryOptions.map((name) => (
               <option key={name} value={name}>
                 {name}
               </option>
@@ -407,17 +437,36 @@ export default function PostForm({
             <option value={NEW_CATEGORY}>+ Новая категория…</option>
           </select>
           {category === NEW_CATEGORY && (
-            <input
-              type="text"
-              className="admin-input"
-              placeholder="Название новой категории"
-              autoFocus
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-            />
+            <div className="admin-inline-actions admin-category-new">
+              <input
+                type="text"
+                className="admin-input"
+                placeholder="Название новой категории"
+                autoFocus
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                onKeyDown={(e) => {
+                  // Enter adds the rubric rather than submitting the article.
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addCategory();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="admin-btn"
+                disabled={addingCategory}
+                onClick={addCategory}
+              >
+                {addingCategory ? "Сохранение…" : "Добавить"}
+              </button>
+            </div>
           )}
+          {categoryError && <p className="admin-error">{categoryError}</p>}
           {/* One field reaches the server either way: the picked rubric or the
-              typed one. The action creates it if it doesn't exist yet. */}
+              typed one. "Добавить" stores a new rubric right away; one typed
+              but never added is still created when the article is saved. */}
           <input type="hidden" name="category" value={values.category} />
         </div>
 

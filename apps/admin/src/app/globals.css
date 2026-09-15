@@ -245,6 +245,11 @@ body {
   flex-wrap: wrap;
 }
 
+.admin-category-new .admin-input {
+  flex: 1;
+  min-width: 0;
+}
+
 .admin-btn-small {
   padding: 5px 10px;
   font-size: 0.8rem;

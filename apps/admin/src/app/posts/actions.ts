@@ -183,6 +183,22 @@ function isUniqueViolation(err: unknown): boolean {
   return typeof err === "object" && err !== null && (err as { code?: string }).code === "23505";
 }
 
+/**
+ * Creates a rubric the moment the editor adds it in the form, instead of only
+ * as a side effect of a successful article save — otherwise a rubric typed
+ * into an article that was never saved (or failed validation) was gone, and
+ * the editor had to type it again next time.
+ */
+export async function createCategoryAction(
+  rawName: string
+): Promise<{ ok: true; name: string } | { ok: false; error: string }> {
+  await requireAdmin();
+
+  const name = await ensureCategory(String(rawName ?? ""));
+  if (!name) return { ok: false, error: "Введите название категории." };
+  return { ok: true, name };
+}
+
 export async function createPostAction(_prevState: PostFormState, formData: FormData): Promise<PostFormState> {
   await requireAdmin();
 
