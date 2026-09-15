@@ -24,7 +24,7 @@ type ParsedFields = {
   excerpt: string;
   blocks: Block[];
   content: string;
-  category: string;
+  categories: string[];
   publishedAt: string;
   readingTime: number | null;
   cover: string;
@@ -61,6 +61,10 @@ function parseFocusValue(raw: FormDataEntryValue | null): number {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
+/** Generous for a real article, but stops a tampered form from filing one
+ * article under hundreds of freshly created rubrics. */
+const CATEGORIES_PER_POST_MAX = 20;
+
 /** Long enough for any real SEO title (Google shows ~60), short enough that a
  * pasted article body can't end up in the `<title>`. */
 const META_TITLE_MAX = 200;
@@ -85,7 +89,7 @@ async function parseFields(
   const publishedAt = String(formData.get("publishedAt") ?? "").trim();
   const readingTimeRaw = String(formData.get("readingTime") ?? "").trim();
   const slugRaw = String(formData.get("slug") ?? "").trim();
-  const categoryRaw = String(formData.get("category") ?? "").trim();
+  const categoriesRaw = formData.getAll("categories").map((value) => String(value));
   const bgRaw = String(formData.get("bgColor") ?? "").trim();
   const coverRaw = String(formData.get("cover") ?? "").trim();
   const coverAlt = stripInlineHtml(String(formData.get("coverAlt") ?? "").trim()).slice(0, 300);
@@ -107,9 +111,18 @@ async function parseFields(
     return { ok: false, error: "Добавьте хотя бы один блок в тело статьи." };
   }
 
-  const category = await ensureCategory(categoryRaw);
-  if (!category) {
-    return { ok: false, error: "Выберите категорию или введите название новой." };
+  if (categoriesRaw.length > CATEGORIES_PER_POST_MAX) {
+    return { ok: false, error: `Не больше ${CATEGORIES_PER_POST_MAX} категорий у одной статьи.` };
+  }
+  // Resolved one by one to their stored spelling, then de-duplicated: two
+  // ticks that differ only in case are the same rubric.
+  const categories: string[] = [];
+  for (const raw of categoriesRaw) {
+    const name = await ensureCategory(raw);
+    if (name && !categories.includes(name)) categories.push(name);
+  }
+  if (categories.length === 0) {
+    return { ok: false, error: "Отметьте хотя бы одну категорию." };
   }
 
   const cover = coverRaw || existingCover || "";
@@ -147,7 +160,7 @@ async function parseFields(
       // column, and it keeps the pre-constructor markdown fallback on the
       // blog working off a single source.
       content: blocksToPlainText(blocks),
-      category,
+      categories,
       publishedAt,
       readingTime,
       cover,
@@ -167,7 +180,7 @@ function toInput(fields: ParsedFields): PostInput {
     excerpt: fields.excerpt,
     content: fields.content,
     blocks: fields.blocks,
-    category: fields.category,
+    categories: fields.categories,
     cover: fields.cover,
     coverAlt: fields.coverAlt,
     coverFocus: fields.coverFocus,
@@ -181,6 +194,22 @@ function toInput(fields: ParsedFields): PostInput {
 function isUniqueViolation(err: unknown): boolean {
   // Postgres SQLSTATE 23505 = unique_violation.
   return typeof err === "object" && err !== null && (err as { code?: string }).code === "23505";
+}
+
+/**
+ * Creates a rubric the moment the editor adds it in the form, instead of only
+ * as a side effect of a successful article save — otherwise a rubric typed
+ * into an article that was never saved (or failed validation) was gone, and
+ * the editor had to type it again next time.
+ */
+export async function createCategoryAction(
+  rawName: string
+): Promise<{ ok: true; name: string } | { ok: false; error: string }> {
+  await requireAdmin();
+
+  const name = await ensureCategory(String(rawName ?? ""));
+  if (!name) return { ok: false, error: "Введите название категории." };
+  return { ok: true, name };
 }
 
 export async function createPostAction(_prevState: PostFormState, formData: FormData): Promise<PostFormState> {

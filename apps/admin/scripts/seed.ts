@@ -26,8 +26,8 @@ async function main() {
       // The `views:` value in the markdown frontmatter is ignored: the counter
       // on the site is a real one, and an imported article has been read by
       // nobody yet. `views` falls to its column default of 0.
-      `INSERT INTO posts (slug, title, excerpt, content, category, cover, published_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO posts (slug, title, excerpt, content, category, categories, cover, published_at)
+       VALUES ($1, $2, $3, $4, $5, ARRAY[$5::text], $6, $7)
        ON CONFLICT (slug) DO NOTHING
        RETURNING id`,
       [

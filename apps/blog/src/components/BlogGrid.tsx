@@ -13,7 +13,7 @@ export default function BlogGrid({ posts, categories }: { posts: PostMeta[]; cat
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(
-    () => (active ? posts.filter((p) => p.category === active) : posts),
+    () => (active ? posts.filter((p) => p.categories.includes(active)) : posts),
     [posts, active]
   );
   const pageCount = getPageCount(filtered.length, PAGE_SIZE);

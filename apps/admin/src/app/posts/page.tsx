@@ -21,7 +21,7 @@ export default async function AdminPostsPage() {
           <thead>
             <tr>
               <th>Заголовок</th>
-              <th>Категория</th>
+              <th>Категории</th>
               <th>Дата</th>
               <th>Просмотры</th>
               <th></th>
@@ -31,7 +31,7 @@ export default async function AdminPostsPage() {
             {posts.map((post) => (
               <tr key={post.id}>
                 <td>{post.title}</td>
-                <td>{post.category}</td>
+                <td>{post.categories.join(", ")}</td>
                 <td>{formatDate(post.date)}</td>
                 <td>{formatViews(post.views)}</td>
                 <td>

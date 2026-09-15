@@ -29,7 +29,13 @@ export default function PostCard({ post }: { post: PostMeta }) {
       </Link>
 
       <div className="post-card__body">
-        <span className="tag">{post.category}</span>
+        <div className="post-card__tags">
+          {post.categories.map((name) => (
+            <span key={name} className="tag">
+              {name}
+            </span>
+          ))}
+        </div>
         <Link href={href}>
           <h3 className="post-card__title">{post.title}</h3>
         </Link>

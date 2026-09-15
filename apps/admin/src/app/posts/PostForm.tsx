@@ -4,6 +4,7 @@ import { useActionState, useEffect, useMemo, useState } from "react";
 import BlockEditor, { stripIds, withIds, type EditorBlock } from "@/components/BlockEditor";
 import ImageField from "@/components/ImageField";
 import CoverFocusPicker from "@/components/CoverFocusPicker";
+import CategoryPicker from "@/components/CategoryPicker";
 import LeaveGuard from "@/components/LeaveGuard";
 import { PAGE_BACKGROUNDS, DEFAULT_BACKGROUND, type Block } from "@/lib/blocks";
 import { pluralRu } from "@/lib/format";
@@ -15,7 +16,7 @@ export type PostFormValues = {
   metaTitle: string;
   slug: string;
   excerpt: string;
-  category: string;
+  categories: string[];
   publishedAt: string;
   readingTime: number | null;
   cover: string;
@@ -27,8 +28,6 @@ export type PostFormValues = {
 };
 
 const initialState: PostFormState = {};
-
-const NEW_CATEGORY = "__new__";
 
 /** Google truncates the search-result title somewhere around here. Not a
  * validation limit — an editor may well have a reason to go longer — so the
@@ -43,7 +42,12 @@ function todayLocal(): string {
   return local.toISOString().slice(0, 10);
 }
 
-type Draft = { savedAt: number; values: PostFormValues };
+type Draft = {
+  savedAt: number;
+  /** `category` is how a draft saved before multi-rubric support carries its
+   * single rubric. */
+  values: PostFormValues & { category?: string };
+};
 
 export default function PostForm({
   action,
@@ -65,8 +69,9 @@ export default function PostForm({
   const [metaTitle, setMetaTitle] = useState(initialValues?.metaTitle ?? "");
   const [slug, setSlug] = useState(initialValues?.slug ?? "");
   const [excerpt, setExcerpt] = useState(initialValues?.excerpt ?? "");
-  const [category, setCategory] = useState(initialValues?.category ?? "");
-  const [newCategory, setNewCategory] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    initialValues?.categories ?? []
+  );
   // A new article defaults to *today in the editor's own timezone*. The
   // initialiser is guarded because it also runs on the server, where "today"
   // is whatever the container's clock says — the server therefore renders an
@@ -103,7 +108,7 @@ export default function PostForm({
       metaTitle,
       slug,
       excerpt,
-      category: category === NEW_CATEGORY ? newCategory : category,
+      categories: selectedCategories,
       publishedAt,
       readingTime: readingTime.trim() === "" ? null : Number(readingTime) || null,
       cover,
@@ -118,8 +123,7 @@ export default function PostForm({
       metaTitle,
       slug,
       excerpt,
-      category,
-      newCategory,
+      selectedCategories,
       publishedAt,
       readingTime,
       cover,
@@ -141,7 +145,7 @@ export default function PostForm({
       metaTitle: initialValues?.metaTitle ?? "",
       slug: initialValues?.slug ?? "",
       excerpt: initialValues?.excerpt ?? "",
-      category: initialValues?.category ?? "",
+      categories: initialValues?.categories ?? [],
       publishedAt: initialValues?.publishedAt ?? (typeof window === "undefined" ? "" : todayLocal()),
       readingTime: initialValues?.readingTime ?? null,
       cover: initialValues?.cover ?? "",
@@ -199,7 +203,9 @@ export default function PostForm({
     setMetaTitle(draft.values.metaTitle ?? "");
     setSlug(draft.values.slug);
     setExcerpt(draft.values.excerpt);
-    setCategory(draft.values.category);
+    setSelectedCategories(
+      draft.values.categories ?? (draft.values.category ? [draft.values.category] : [])
+    );
     setPublishedAt(draft.values.publishedAt);
     setReadingTime(draft.values.readingTime == null ? "" : String(draft.values.readingTime));
     setCover(draft.values.cover);
@@ -382,43 +388,20 @@ export default function PostForm({
         <input type="hidden" name="blocks" value={JSON.stringify(stripIds(blocks))} />
 
         <div className="admin-form-field">
-          <label htmlFor="category">Категория</label>
-          <select
-            id="category"
-            className="admin-select"
-            value={categories.includes(category) || category === "" ? category : NEW_CATEGORY}
-            onChange={(e) => {
-              if (e.target.value === NEW_CATEGORY) {
-                setCategory(NEW_CATEGORY);
-                setNewCategory("");
-              } else {
-                setCategory(e.target.value);
-              }
-            }}
-          >
-            <option value="" disabled>
-              Выберите категорию
-            </option>
-            {categories.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-            <option value={NEW_CATEGORY}>+ Новая категория…</option>
-          </select>
-          {category === NEW_CATEGORY && (
-            <input
-              type="text"
-              className="admin-input"
-              placeholder="Название новой категории"
-              autoFocus
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-            />
-          )}
-          {/* One field reaches the server either way: the picked rubric or the
-              typed one. The action creates it if it doesn't exist yet. */}
-          <input type="hidden" name="category" value={values.category} />
+          <label htmlFor="categories">Категории</label>
+          <CategoryPicker
+            id="categories"
+            options={categories}
+            selected={selectedCategories}
+            onChange={setSelectedCategories}
+          />
+          <p className="admin-hint">
+            Можно отметить несколько — статья появится в каждой из этих рубрик. Первая отмеченная
+            считается основной.
+          </p>
+          {selectedCategories.map((name) => (
+            <input key={name} type="hidden" name="categories" value={name} />
+          ))}
         </div>
 
         <fieldset className="admin-fieldset">
