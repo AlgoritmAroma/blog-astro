@@ -141,15 +141,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
           <AuthorBox />
 
-          <div
-            style={{
-              marginTop: 56,
-              padding: "40px",
-              borderRadius: 24,
-              background: "var(--black)",
-              textAlign: "center",
-            }}
-          >
+          <div className="article-cta">
             <h3 style={{ marginBottom: 16, fontSize: "1.5rem" }}>Готовы узнать свою натальную карту?</h3>
             <p style={{ color: "var(--orange)", opacity: 0.85, marginBottom: 24 }}>
               Персональный расчёт, прогнозы и совместимость — бесплатно, за пару минут.
