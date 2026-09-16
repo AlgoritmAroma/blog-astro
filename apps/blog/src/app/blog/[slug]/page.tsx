@@ -11,6 +11,8 @@ import ViewTracker from "@/components/ViewTracker";
 import { stripInlineHtml } from "@/lib/blocks";
 import { coverAspectRatio } from "@/lib/cover-frame";
 import { getPostBySlug, getRelatedPosts } from "@/lib/posts";
+import { mainSiteUrl, readerIsSignedIn } from "@/lib/site";
+import { startHref } from "@/lib/main-site-links";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
 import { publicViews } from "@/lib/views";
 import { submitCommentAction } from "./actions";
@@ -66,7 +68,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
           <Breadcrumbs
             items={[
-              { label: "Главная", href: "https://aiastro.ru" },
+              { label: "Главная", href: mainSiteUrl() },
               { label: "Блог", href: "/" },
               // A crumb is a single path, so it names the main rubric only.
               ...(post.categories[0] ? [{ label: post.categories[0] }] : []),
@@ -146,7 +148,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <p style={{ color: "var(--orange)", opacity: 0.85, marginBottom: 24 }}>
               Персональный расчёт, прогнозы и совместимость — бесплатно, за пару минут.
             </p>
-            <a href="https://aiastro.ru/login" className="btn">
+            <a href={startHref(mainSiteUrl(), await readerIsSignedIn())} className="btn">
               Попробовать бесплатно
             </a>
           </div>

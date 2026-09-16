@@ -96,10 +96,16 @@ jobs:
           host: ${{ vars.DEV_SERVER_HOST }}
           username: ${{ vars.DEV_SERVER_USER }}
           key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          # MAIN_SITE_URL decides which main site the blog's header and footer
+          # link to. Dev and prod run the same image, so it is settled here, at
+          # deploy time, rather than at build time. It goes after the secret on
+          # purpose: env_file takes the last definition of a variable, so this
+          # one wins even if DEV_ENV_BLOG already carries a MAIN_SITE_URL.
           script: |
             cat <<'EOF' > ${{ vars.DEV_SERVER_DIR }}/blog/.env
             ${{ secrets.DEV_ENV_BLOG }}
             IMAGE_TAG=${{ github.ref_name }}
+            MAIN_SITE_URL=${{ vars.DEV_MAIN_SITE_URL || 'https://dev.aiastro.ru' }}
             EOF
 
             echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
