@@ -2,18 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { MAIN_SITE_SECTIONS, accountLink, sectionHref } from "@/lib/main-site-links";
 
-const MAIN_SITE = "https://aiastro.ru";
-
-const NAV_LINKS = [
-  { label: "Натальная карта", href: `${MAIN_SITE}/natal` },
-  { label: "Прогнозы", href: `${MAIN_SITE}/prediction` },
-  { label: "Совместимость", href: `${MAIN_SITE}/compatibility` },
-  { label: "Ответы на вопросы", href: `${MAIN_SITE}/answers` },
-  { label: "Блог", href: "/", internal: true },
-];
-
-export default function Header() {
+export default function Header({
+  mainSite,
+  signedIn,
+}: {
+  mainSite: string;
+  signedIn: boolean;
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -31,14 +28,23 @@ export default function Header() {
     };
   }, [menuOpen]);
 
+  const navLinks: { label: string; href: string; internal?: boolean }[] = [
+    ...MAIN_SITE_SECTIONS.map((section) => ({
+      label: section.label,
+      href: sectionHref(mainSite, section.path, signedIn),
+    })),
+    { label: "Блог", href: "/", internal: true },
+  ];
+  const account = accountLink(mainSite, signedIn);
+
   return (
     <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
-      <a href={MAIN_SITE} style={{ flexShrink: 0 }}>
+      <a href={mainSite} style={{ flexShrink: 0 }}>
         <h3 style={{ fontSize: "var(--h3)" }}>ASTRO AI</h3>
       </a>
 
       <nav className="site-nav">
-        {NAV_LINKS.map((link) =>
+        {navLinks.map((link) =>
           link.internal ? (
             <Link
               key={link.href}
@@ -56,8 +62,8 @@ export default function Header() {
       </nav>
 
       <div className="header-actions">
-        <a href={`${MAIN_SITE}/login`} className="btn">
-          Войти
+        <a href={account.href} className="btn">
+          {account.label}
         </a>
         <button
           type="button"
@@ -74,7 +80,7 @@ export default function Header() {
 
       {menuOpen && (
         <div className="mobile-menu">
-          {NAV_LINKS.map((link) =>
+          {navLinks.map((link) =>
             link.internal ? (
               <Link
                 key={link.href}

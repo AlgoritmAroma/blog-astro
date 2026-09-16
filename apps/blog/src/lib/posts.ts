@@ -17,6 +17,7 @@ type PostRow = {
   excerpt: string;
   content: string;
   category: string;
+  categories: string[];
   cover: string;
   cover_alt: string | null;
   cover_focus_x: number | null;
@@ -29,6 +30,13 @@ type PostRow = {
   reading_time: number | null;
   views: number;
 };
+
+/** The list column is backfilled from the single one at startup, so the
+ * fallback only matters for a row written by an older container since. */
+function rowCategories(row: PostRow): string[] {
+  if (row.categories?.length) return row.categories;
+  return row.category ? [row.category] : [];
+}
 
 function readingTimeFromText(text: string): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
@@ -43,7 +51,7 @@ function rowToMeta(row: PostRow): PostMeta {
     metaTitle: row.meta_title ?? "",
     excerpt: row.excerpt,
     date: row.published_at,
-    category: row.category,
+    categories: rowCategories(row),
     cover: row.cover,
     coverAlt: row.cover_alt || row.title,
     // NULL is every cover that predates the focus picker. Centre is what the
@@ -99,10 +107,12 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
 export async function getRelatedPosts(current: PostMeta, limit = 2): Promise<PostMeta[]> {
   await connection();
   const all = (await getAllPosts()).filter((post) => post.slug !== current.slug);
-  const sameCategory = all.filter((post) => post.category === current.category);
+  const sharesRubric = (post: PostMeta) =>
+    post.categories.some((name) => current.categories.includes(name));
+  const sameCategory = all.filter(sharesRubric);
   if (sameCategory.length >= limit) return sameCategory.slice(0, limit);
 
-  const others = all.filter((post) => post.category !== current.category);
+  const others = all.filter((post) => !sharesRubric(post));
   return [...sameCategory, ...others].slice(0, limit);
 }
 

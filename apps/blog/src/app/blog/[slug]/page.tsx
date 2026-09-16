@@ -11,8 +11,10 @@ import ViewTracker from "@/components/ViewTracker";
 import { stripInlineHtml } from "@/lib/blocks";
 import { coverAspectRatio } from "@/lib/cover-frame";
 import { getPostBySlug, getRelatedPosts } from "@/lib/posts";
+import { mainSiteUrl, readerIsSignedIn } from "@/lib/site";
+import { startHref } from "@/lib/main-site-links";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
-import { MIN_PUBLIC_VIEWS } from "@/lib/blog";
+import { publicViews } from "@/lib/views";
 import { submitCommentAction } from "./actions";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -66,24 +68,25 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
           <Breadcrumbs
             items={[
-              { label: "Главная", href: "https://aiastro.ru" },
+              { label: "Главная", href: mainSiteUrl() },
               { label: "Блог", href: "/" },
-              { label: post.category },
+              // A crumb is a single path, so it names the main rubric only.
+              ...(post.categories[0] ? [{ label: post.categories[0] }] : []),
               { label: post.title },
             ]}
           />
-          <span className="tag" style={{ margin: "20px 0", display: "inline-flex" }}>
-            {post.category}
-          </span>
+          <div className="post-tags">
+            {post.categories.map((name) => (
+              <span key={name} className="tag">
+                {name}
+              </span>
+            ))}
+          </div>
           <h1 style={{ fontSize: "var(--h2)", maxWidth: 820, margin: "16px 0" }}>{post.title}</h1>
           <div className="post-meta-row">
             <span>{formatDate(post.date)}</span>
-            {post.views >= MIN_PUBLIC_VIEWS && (
-              <>
-                <span>·</span>
-                <span>{formatViewCount(post.views)}</span>
-              </>
-            )}
+            <span>·</span>
+            <span>{formatViewCount(publicViews(post))}</span>
             <span>·</span>
             <span>{formatReadingTime(post.readingTime)} чтения</span>
             <ShareButtons title={post.title} compact />
@@ -140,20 +143,12 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
           <AuthorBox />
 
-          <div
-            style={{
-              marginTop: 56,
-              padding: "40px",
-              borderRadius: 24,
-              background: "var(--black)",
-              textAlign: "center",
-            }}
-          >
+          <div className="article-cta">
             <h3 style={{ marginBottom: 16, fontSize: "1.5rem" }}>Готовы узнать свою натальную карту?</h3>
             <p style={{ color: "var(--orange)", opacity: 0.85, marginBottom: 24 }}>
               Персональный расчёт, прогнозы и совместимость — бесплатно, за пару минут.
             </p>
-            <a href="https://aiastro.ru/login" className="btn">
+            <a href={startHref(mainSiteUrl(), await readerIsSignedIn())} className="btn">
               Попробовать бесплатно
             </a>
           </div>

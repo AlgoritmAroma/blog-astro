@@ -72,3 +72,4 @@ jobs:
             docker-compose -f ${{ vars.PROD_SERVER_DIR }}/blog/compose.yaml pull
             docker-compose -f ${{ vars.PROD_SERVER_DIR }}/blog/compose.yaml -p blog-astro down
             docker-compose -f ${{ vars.PROD_SERVER_DIR }}/blog/compose.yaml -p blog-astro up -d
+            

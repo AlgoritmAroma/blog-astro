@@ -441,6 +441,91 @@ h3 {
   }
 }
 
+/* Narrow single screens — the folded Galaxy Z Fold (280–344px wide), the
+   Z Flip (360px). Logo, "Блог", the login button and the burger add up to
+   about 410px and none of them may shrink, so below that the button and the
+   burger were pushed off the right edge and clipped by the page's
+   overflow-x: hidden. "Блог" is already the first item in the burger menu,
+   so it gives way here, and the button tightens up. */
+@media (max-width: 440px) {
+  .site-header {
+    gap: 12px;
+  }
+
+  .site-nav {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 4px;
+  }
+
+  .site-header .btn {
+    height: 38px;
+    min-height: 38px;
+    padding: 0 16px;
+    font-size: 0.8125rem;
+  }
+
+  /* A word longer than the whole line wraps inside itself instead of
+     running off the screen. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    overflow-wrap: break-word;
+  }
+
+  /* A button's label can't be allowed to push it past the screen edge. */
+  .btn {
+    max-width: 100%;
+    height: auto;
+    min-height: 45px;
+    padding: 12px 20px;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+/* The cover screen of the first Z Fold generations is 280px: the type scale
+   and the edges step down once more so the logo, button and burger fit. */
+@media (max-width: 360px) {
+  :root {
+    --gutter: 16px;
+    --h1: 1.625rem;
+    --h2: 1.5rem;
+    --h3: 1.25rem;
+  }
+
+  .site-header {
+    left: 6px;
+    right: 6px;
+    padding: 12px;
+  }
+
+  .site-header .btn {
+    padding: 0 12px;
+  }
+
+  .mobile-menu {
+    top: 80px;
+    left: 6px;
+    right: 6px;
+  }
+}
+
+/* At 280px even ordinary headline words ("САМОСТОЯТЕЛЬНО") are wider than the
+   line, so they are hyphenated properly rather than chopped. Not wider up:
+   there it would split words ("НАТАЛЬ-НУЮ") that fit on the next line. */
+@media (max-width: 300px) {
+  h1,
+  h2,
+  h3,
+  h4 {
+    hyphens: auto;
+  }
+}
+
 /* ---------- footer ---------- */
 
 .site-footer {
@@ -517,6 +602,22 @@ h3 {
     flex-direction: column;
     align-items: baseline;
     gap: 12px;
+  }
+}
+
+/* ---------- article call-to-action ---------- */
+
+.article-cta {
+  margin-top: 56px;
+  padding: 40px;
+  border-radius: 24px;
+  background: var(--black);
+  text-align: center;
+}
+
+@media (max-width: 440px) {
+  .article-cta {
+    padding: 28px 16px;
   }
 }
 
@@ -649,10 +750,6 @@ h3 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 48px 32px;
-  /* Not `stretch`, which is the grid default. Cover frames take their shape
-     from the picture now, so two cards in a row can legitimately differ in
-     height — and stretching the shorter one to match left a slab of empty
-     white under its "Читать далее". Each card ends where its content ends. */
   align-items: start;
 }
 
@@ -660,9 +757,14 @@ h3 {
 
 /* Same white-on-beige panel as the rubric sidebar, so the grid reads as a row
    of bounded cards rather than images with text floating under them. */
+/* Every card is the same height, whatever its cover and however much text it
+   has: short text leaves white space above the footer, long text is cut with
+   "......." (ClampedText). */
 .post-card {
+  --post-card-height: 554px;
   display: flex;
   flex-direction: column;
+  height: var(--post-card-height);
   background: #fff;
   border: 1px solid var(--orange-12);
   border-radius: 24px;
@@ -690,10 +792,16 @@ h3 {
    the card's. */
 .post-card__cover-link {
   display: block;
+  flex-shrink: 0;
   padding: 18px 18px 0;
 }
 
+/* The frame still follows the cover's proportions, but a fixed-height card
+   can't let a portrait cover take the room its title and text need. Past this
+   height the frame stops growing and the picture is cropped around the focus
+   point the editor set. */
 .post-card .cover-frame {
+  max-height: 240px;
   border: 1px solid var(--orange-12);
   border-radius: 16px;
 }
@@ -728,13 +836,27 @@ h3 {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
   padding: 16px 18px 18px;
 }
 
-/* The rubric pill is a flex item here, and flex items stretch by default —
-   without this it grows to the full width of the card. */
-.post-card__body > .tag {
-  align-self: flex-start;
+/* An article can be in several rubrics, so the pills wrap onto more lines
+   rather than stretching across the card. */
+.post-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 36px under the pills, not 20: the h1's 16px top margin collapses into this
+   one. The single pill this replaced was an inline box, whose margin didn't
+   collapse, so title, wave and cover all sat 16px lower — and moving to a
+   block wrapper had quietly lifted the whole article start by that much. */
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 36px;
 }
 
 .post-card__title {
@@ -747,15 +869,36 @@ h3 {
   color: var(--apricot);
 }
 
+/* Takes whatever height the card has left, and ClampedText fills exactly
+   that — so the excerpt is what gives, never the footer. */
 .post-card__excerpt {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
   font-size: 0.95rem;
+  line-height: 1.5;
   opacity: 0.75;
   margin-bottom: 14px;
+}
+
+/* The "......." ClampedText puts where it cut the text. Set in the body face
+   everywhere: the headline face draws dots too small to read as "there's
+   more". */
+.clamped-text__more {
+  font-family: var(--font-involve), sans-serif;
+  letter-spacing: 0.04em;
+}
+
+/* At most three lines of title, so a long one can't squeeze the excerpt out. */
+.post-card__title {
+  max-height: calc(3 * 1.15em);
+  overflow: hidden;
 }
 
 /* Pushes the meta row and the CTA to the bottom edge so cards with titles of
    different lengths still line their footers up across the grid. */
 .post-card__footer {
+  flex-shrink: 0;
   margin-top: auto;
 }
 
@@ -781,6 +924,15 @@ h3 {
   color: var(--apricot);
 }
 
+/* The grid's 260px column minimum is wider than the 248px a 280px screen
+   (the first Z Fold's cover screen) leaves for content — one column, as wide
+   as there is room for. */
+@media (max-width: 360px) {
+  .post-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ---------- article meta row + share ---------- */
 
 .post-meta-row {
@@ -790,6 +942,15 @@ h3 {
   flex-wrap: wrap;
   font-size: var(--mini);
   opacity: 0.75;
+}
+
+/* At 360px and down the headline is set a step smaller so it fits, which
+   shortens the article's dark intro and lifted the wave and the cover with
+   it. This gives that room back under the meta row. */
+@media (max-width: 360px) {
+  .post-meta-row {
+    margin-bottom: 14px;
+  }
 }
 
 .post-share-block {

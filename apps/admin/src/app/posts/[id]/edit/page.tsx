@@ -21,7 +21,7 @@ export default async function EditPostPage({
   // A rubric that was deleted from the list but is still set on this article
   // must stay selectable, otherwise saving would silently move the post.
   const names = categories.map((category) => category.name);
-  if (post.category && !names.includes(post.category)) names.unshift(post.category);
+  for (const name of post.categories) if (!names.includes(name)) names.unshift(name);
 
   return (
     <>

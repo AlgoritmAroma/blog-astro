@@ -28,7 +28,9 @@ export type PostMeta = {
   metaTitle: string;
   excerpt: string;
   date: string;
-  category: string;
+  /** Every rubric the article is in, in the order the editor ticked them.
+   * Never empty for a saved article; the first is its main rubric. */
+  categories: string[];
   cover: string;
   coverAlt: string;
   /** Which part of the cover survives when the frame *does* have to crop, as
@@ -55,12 +57,6 @@ export type Post = PostMeta & {
 };
 
 export const PAGE_SIZE = 20;
-
-/** Below this the view count is hidden rather than shown. It is a real
- * counter now, and "3 просмотра" under a fresh article works against the
- * article — the number only starts saying something once there is something
- * to say. */
-export const MIN_PUBLIC_VIEWS = 100;
 
 export function getPageCount(total: number, pageSize: number = PAGE_SIZE): number {
   return Math.max(1, Math.ceil(total / pageSize));

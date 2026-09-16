@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MIN_PUBLIC_VIEWS, type PostMeta } from "@/lib/blog";
+import ClampedText from "@/components/ClampedText";
+import { type PostMeta } from "@/lib/blog";
 import { coverAspectRatio } from "@/lib/cover-frame";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
+import { publicViews } from "@/lib/views";
 
 export default function PostCard({ post }: { post: PostMeta }) {
   const href = `/blog/${post.slug}`;
@@ -28,21 +30,23 @@ export default function PostCard({ post }: { post: PostMeta }) {
       </Link>
 
       <div className="post-card__body">
-        <span className="tag">{post.category}</span>
+        <div className="post-card__tags">
+          {post.categories.map((name) => (
+            <span key={name} className="tag">
+              {name}
+            </span>
+          ))}
+        </div>
         <Link href={href}>
-          <h3 className="post-card__title">{post.title}</h3>
+          <ClampedText as="h3" className="post-card__title" text={post.title} />
         </Link>
-        <p className="post-card__excerpt">{post.excerpt}</p>
+        <ClampedText className="post-card__excerpt" text={post.excerpt} />
 
         <div className="post-card__footer">
           <div className="post-card__meta">
             <span>{formatDate(post.date)}</span>
-            {post.views >= MIN_PUBLIC_VIEWS && (
-              <>
-                <span>·</span>
-                <span>{formatViewCount(post.views)}</span>
-              </>
-            )}
+            <span>·</span>
+            <span>{formatViewCount(publicViews(post))}</span>
             <span>·</span>
             <span>{formatReadingTime(post.readingTime)} чтения</span>
           </div>

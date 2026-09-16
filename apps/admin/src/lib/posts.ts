@@ -14,6 +14,7 @@ type PostRow = {
   excerpt: string;
   content: string;
   category: string;
+  categories: string[];
   cover: string;
   cover_alt: string | null;
   cover_focus_x: number | null;
@@ -26,6 +27,13 @@ type PostRow = {
   reading_time: number | null;
   views: number;
 };
+
+/** The list column is backfilled from the single one at startup, so the
+ * fallback only matters for a row written by an older container since. */
+function rowCategories(row: PostRow): string[] {
+  if (row.categories?.length) return row.categories;
+  return row.category ? [row.category] : [];
+}
 
 function readingTimeFromText(text: string): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
@@ -40,7 +48,7 @@ function rowToMeta(row: PostRow): PostMeta {
     metaTitle: row.meta_title ?? "",
     excerpt: row.excerpt,
     date: row.published_at,
-    category: row.category,
+    categories: rowCategories(row),
     cover: row.cover,
     coverAlt: row.cover_alt || row.title,
     // The estimate is only a fallback: once the editor puts a number in the
@@ -68,7 +76,9 @@ export type PostInput = {
   excerpt: string;
   content: string;
   blocks: Block[];
-  category: string;
+  /** At least one, already resolved to stored rubric names. The first is also
+   * written to the single `category` column. */
+  categories: string[];
   cover: string;
   coverAlt: string;
   /** Percent of the cover's own width/height, handed to the blog as CSS
@@ -105,7 +115,7 @@ export async function getPostById(id: number): Promise<(PostInput & { id: number
     excerpt: row.excerpt,
     content: row.content,
     blocks,
-    category: row.category,
+    categories: rowCategories(row),
     cover: row.cover,
     coverAlt: row.cover_alt ?? "",
     coverFocus: { x: row.cover_focus_x ?? 50, y: row.cover_focus_y ?? 50 },
@@ -124,8 +134,9 @@ export async function createPost(input: PostInput): Promise<number> {
     // `views` is left to its column default of 0 — a new article has been read
     // by nobody yet, and that is the number.
     `INSERT INTO posts (slug, title, meta_title, excerpt, content, blocks, category, cover, cover_alt,
-     cover_focus_x, cover_focus_y, cover_width, cover_height, bg_color, published_at, reading_time)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+     cover_focus_x, cover_focus_y, cover_width, cover_height, bg_color, published_at, reading_time,
+     categories)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
      RETURNING id`,
     [
       input.slug,
@@ -134,7 +145,7 @@ export async function createPost(input: PostInput): Promise<number> {
       input.excerpt,
       input.content,
       JSON.stringify(input.blocks),
-      input.category,
+      input.categories[0],
       input.cover,
       input.coverAlt,
       input.coverFocus.x,
@@ -144,6 +155,7 @@ export async function createPost(input: PostInput): Promise<number> {
       input.bgColor,
       input.publishedAt,
       input.readingTime,
+      input.categories,
     ]
   );
   return rows[0].id;
@@ -155,7 +167,7 @@ export async function updatePost(id: number, input: PostInput): Promise<void> {
     `UPDATE posts SET slug=$1, title=$2, meta_title=$3, excerpt=$4, content=$5, blocks=$6::jsonb,
      category=$7, cover=$8, cover_alt=$9, cover_focus_x=$10, cover_focus_y=$11,
      cover_width=$12, cover_height=$13, bg_color=$14, published_at=$15, reading_time=$16,
-     updated_at=now()
+     categories=$18, updated_at=now()
      WHERE id=$17`,
     [
       input.slug,
@@ -164,7 +176,7 @@ export async function updatePost(id: number, input: PostInput): Promise<void> {
       input.excerpt,
       input.content,
       JSON.stringify(input.blocks),
-      input.category,
+      input.categories[0],
       input.cover,
       input.coverAlt,
       input.coverFocus.x,
@@ -175,6 +187,7 @@ export async function updatePost(id: number, input: PostInput): Promise<void> {
       input.publishedAt,
       input.readingTime,
       id,
+      input.categories,
     ]
   );
 }
