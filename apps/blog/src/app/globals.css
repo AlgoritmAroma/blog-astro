@@ -422,23 +422,41 @@ h3 {
      96px only matters on a screen short enough to scroll, where it keeps the
      first section clear of the header. */
   padding: 96px 24px 124px;
-  /* The main site's sky is drawn on pure black, not the page's #121212. */
-  background-color: #000;
+  /* No background of its own — the black is the sky's (`.night-sky`), which
+     is taller than this box on purpose. */
   /* A short screen (landscape phone) scrolls rather than pushing the last
      section off the bottom edge. */
   overflow-y: auto;
+  /* A drag that reaches the end of the menu stops here instead of scrolling
+     the page underneath — which on a phone is what makes the browser's bars
+     slide in and out, resizing the screen under the open menu. */
+  overscroll-behavior: contain;
   /* No entrance animation: the main site's menu is simply there on the tap,
      and the two should open the same way. */
 }
 
 /* The sky itself (components/NightSky.tsx). Fixed, so a landscape phone
    scrolling the list doesn't scroll the stars with it; it comes first in the
-   menu, so the links — positioned too — paint over it. */
+   menu, so the links — positioned too — paint over it.
+
+   It is as tall as the screen gets with the browser's bars hidden (`lvh`),
+   not as tall as it is right now. With `inset: 0` it stopped where the
+   current viewport stops, which on a phone is short of the real bottom edge
+   whenever the address bar or the bottom bar is showing — iOS draws its
+   bottom bar translucent over the page — and moves while they slide. On the
+   main site that never shows, because the page behind its menu is the same
+   black sky; here, below the hero, it is the cream page, and every short
+   pixel came through as a pale strip along the bottom. 100vh is the
+   fallback, and on mobile browsers without `lvh` it already means the tall
+   height. */
 .night-sky {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100lvh;
+  background-color: #000;
   pointer-events: none;
 }
 
