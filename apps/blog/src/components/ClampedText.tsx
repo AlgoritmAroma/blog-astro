@@ -2,19 +2,20 @@
 
 import { useLayoutEffect, useRef } from "react";
 
-/** What replaces the cut-off part. The editor asked for dots a reader can't
- * miss, not the single "…" a CSS line-clamp would draw. */
-const MORE = ".......";
+/** What replaces the cut-off part. */
+const MORE = "…";
 
 /**
- * Text cut to whatever box its CSS gives it, ending in "......." when it had
- * to be cut.
+ * Text cut to whatever box its CSS gives it, ending in "…" when it had to be
+ * cut.
  *
- * CSS can clamp lines but can't choose the ellipsis, so the fitting happens
- * here: the element's own height is set by its stylesheet (a max-height, or a
- * flex share of a fixed-height card) with overflow hidden, and this finds the
- * most whole words that fit alongside the dots. The server renders the full
- * text, so without JavaScript the box simply hides the overflow.
+ * A CSS line-clamp can't be used here: the element's height isn't a whole
+ * number of lines, it's whatever share of a fixed-height card is left over
+ * after the tags, the title and the footer have taken theirs. So the fitting
+ * happens here — the stylesheet sets the box (with overflow hidden) and this
+ * finds the most whole words that fit alongside the ellipsis. The server
+ * renders the full text, so without JavaScript the box simply hides the
+ * overflow.
  *
  * The text is written to the DOM node directly while measuring. React only
  * touches that node again when `text` changes, and that re-runs the fit.
@@ -39,29 +40,23 @@ export default function ClampedText({
 
     const words = text.split(/\s+/).filter(Boolean);
 
-    /** The first `count` words and the dots, or the whole text for null. The
-     * dots get their own element: in the headline face they shrink to a
-     * barely visible dotted line, so the stylesheet sets them in the body
-     * face. */
+    /** The first `count` words and the ellipsis, or the whole text for null. */
     function render(count: number | null) {
       if (!el) return;
       if (count === null) {
         el.textContent = text;
         return;
       }
-      // Trailing punctuation would run into the dots ("слово,.......").
-      el.textContent = words.slice(0, count).join(" ").replace(/[\s.,;:!?…—–-]+$/, "");
-      const more = document.createElement("span");
-      more.className = "clamped-text__more";
-      more.textContent = MORE;
-      el.append(more);
+      // Trailing punctuation would run into the ellipsis ("слово,…").
+      el.textContent =
+        words.slice(0, count).join(" ").replace(/[\s.,;:!?…—–-]+$/, "") + MORE;
     }
 
     function fit() {
       render(null);
       if (!overflows()) return;
 
-      // Largest word count that still fits; 0 leaves just the dots.
+      // Largest word count that still fits; 0 leaves just the ellipsis.
       let lo = 0;
       let hi = words.length - 1;
       while (lo < hi) {

@@ -395,6 +395,18 @@ h3 {
   transform: translateY(-7px) rotate(-45deg);
 }
 
+/* Covers the whole page under the menu. Without it the panel was a dark box
+   on a dark hero with no edge to it, and the only way to close the menu was
+   to hit the burger again — a tap anywhere else did nothing. */
+.mobile-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  animation: mobile-menu-fade 0.2s ease;
+}
+
 .mobile-menu {
   position: fixed;
   top: 87px;
@@ -406,8 +418,31 @@ h3 {
   gap: 2px;
   padding: 8px;
   border-radius: 24px;
-  background: rgba(18, 18, 18, 0.97);
+  background: rgba(18, 18, 18, 0.98);
+  border: 1px solid var(--orange-12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(12px);
+  /* A long menu on a short screen (landscape phone) scrolls inside itself
+     rather than running off the bottom edge. */
+  max-height: calc(100dvh - 97px);
+  overflow-y: auto;
+  animation: mobile-menu-fade 0.2s ease;
+}
+
+@keyframes mobile-menu-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu,
+  .mobile-menu-backdrop {
+    animation: none;
+  }
 }
 
 .mobile-menu-link {
@@ -419,6 +454,16 @@ h3 {
 
 .mobile-menu-link:last-child {
   border-bottom: none;
+}
+
+/* The account link closes the list rather than reading as one more section. */
+.mobile-menu-account {
+  margin-top: 6px;
+  border-bottom: none;
+  border-radius: 16px;
+  background: var(--orange-12);
+  font-weight: 700;
+  text-align: center;
 }
 
 @media (max-width: 860px) {
@@ -435,8 +480,13 @@ h3 {
   }
 }
 
+/* A viewport that grows past the breakpoint while the menu is open (a phone
+   turned sideways, a resized window) leaves the burger hidden — so the panel
+   and, more to the point, the backdrop that swallows every click have to go
+   with it. */
 @media (min-width: 861px) {
-  .mobile-menu {
+  .mobile-menu,
+  .mobile-menu-backdrop {
     display: none;
   }
 }
@@ -759,9 +809,9 @@ h3 {
    of bounded cards rather than images with text floating under them. */
 /* Every card is the same height, whatever its cover and however much text it
    has: short text leaves white space above the footer, long text is cut with
-   "......." (ClampedText). */
+   "…" (ClampedText). */
 .post-card {
-  --post-card-height: 554px;
+  --post-card-height: 570px;
   display: flex;
   flex-direction: column;
   height: var(--post-card-height);
@@ -793,15 +843,19 @@ h3 {
 .post-card__cover-link {
   display: block;
   flex-shrink: 0;
-  padding: 18px 18px 0;
+  padding: 24px 24px 0;
 }
 
-/* The frame still follows the cover's proportions, but a fixed-height card
-   can't let a portrait cover take the room its title and text need. Past this
-   height the frame stops growing and the picture is cropped around the focus
-   point the editor set. */
+/* In the grid every cover is shown in the same 3:2 frame, whatever shape the
+   file is — letting the frame follow each cover's own proportions gave a row
+   of cards whose pictures, tags and titles all started at different heights.
+   What doesn't fit the frame is cropped around the focus point the editor
+   set. (The article hero still follows its cover; there is nothing for it to
+   line up against — see lib/cover-frame.ts.)
+   The cap keeps a wide column from handing the whole card to the picture. */
 .post-card .cover-frame {
-  max-height: 240px;
+  aspect-ratio: 3 / 2;
+  max-height: 260px;
   border: 1px solid var(--orange-12);
   border-radius: 16px;
 }
@@ -837,7 +891,7 @@ h3 {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  padding: 16px 18px 18px;
+  padding: 18px 24px 24px;
 }
 
 /* An article can be in several rubrics, so the pills wrap onto more lines
@@ -879,14 +933,6 @@ h3 {
   line-height: 1.5;
   opacity: 0.75;
   margin-bottom: 14px;
-}
-
-/* The "......." ClampedText puts where it cut the text. Set in the body face
-   everywhere: the headline face draws dots too small to read as "there's
-   more". */
-.clamped-text__more {
-  font-family: var(--font-involve), sans-serif;
-  letter-spacing: 0.04em;
 }
 
 /* At most three lines of title, so a long one can't squeeze the excerpt out. */
