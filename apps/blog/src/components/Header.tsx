@@ -24,9 +24,14 @@ export default function Header({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // The page stays put under the open menu. `overflow: hidden` on <body>
+  // alone doesn't hold on iOS — Safari only honours it on the root element.
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    const value = menuOpen ? "hidden" : "";
+    document.documentElement.style.overflow = value;
+    document.body.style.overflow = value;
     return () => {
+      document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
     };
   }, [menuOpen]);
