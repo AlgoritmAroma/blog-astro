@@ -359,40 +359,35 @@ h3 {
   flex-shrink: 0;
 }
 
+/* The same control the main site's header carries: a filled circle the size
+   of the "Войти" pill beside it, with the icon in the dark ink the pill uses
+   for its label. It was a bare transparent square with three thin gold rules,
+   which read as a different site's header sitting above the same content. */
 .mobile-menu-btn {
   display: none;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 5px;
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   padding: 0;
-  background: transparent;
+  background: var(--orange);
   border: none;
+  border-radius: 200px;
+  color: #121212;
   cursor: pointer;
   flex-shrink: 0;
+  transition: background 0.3s ease;
 }
 
-.mobile-menu-btn span {
+.mobile-menu-btn:hover {
+  background: var(--orange-70);
+}
+
+/* Both icons are `fill`/`stroke: currentColor`, so the colour is set once
+   above and the open and closed states cannot drift apart. */
+.mobile-menu-btn svg {
   display: block;
-  width: 20px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--orange);
-  transition: transform 0.25s ease, opacity 0.25s ease;
-}
-
-.mobile-menu-btn.is-open span:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
-}
-
-.mobile-menu-btn.is-open span:nth-child(2) {
-  opacity: 0;
-}
-
-.mobile-menu-btn.is-open span:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
 }
 
 /* Covers the whole page under the menu. Without it the panel was a dark box
@@ -510,9 +505,14 @@ h3 {
     gap: 4px;
   }
 
+  /* Tighter padding and a smaller label are what buy the width here; the
+     height stays 45px so the pill and the burger circle beside it stay the
+     same size, as they are on the main site. Measured at 412, 390, 375, 360,
+     344, 320 and 280px: the burger's right edge keeps 12–16px inside the
+     header and nothing overflows. */
   .site-header .btn {
-    height: 38px;
-    min-height: 38px;
+    height: 45px;
+    min-height: 45px;
     padding: 0 16px;
     font-size: 0.8125rem;
   }
