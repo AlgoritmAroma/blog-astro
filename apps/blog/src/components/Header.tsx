@@ -62,7 +62,7 @@ export default function Header({
 
   return (
     <>
-      <header className={`site-header${scrolled || menuOpen ? " is-scrolled" : ""}`}>
+      <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
         <a href={mainSite} style={{ flexShrink: 0 }}>
           <h3 style={{ fontSize: "var(--h3)" }}>ASTRO AI</h3>
         </a>
@@ -102,50 +102,29 @@ export default function Header({
         </div>
       </header>
 
+      {/* The menu covers the screen, so a click anywhere in it closes —
+          whether it landed on a section or on the empty sky between them.
+          The account button stays in the header above, where the main site
+          keeps it too, rather than being repeated in the list. */}
       {menuOpen && (
-        <>
-          {/* Dims the page under the menu — the panel is dark on a dark hero
-              and had nothing to separate it from the page behind — and is
-              what a tap outside the menu lands on, which is how a reader
-              expects to close it. */}
-          <div
-            className="mobile-menu-backdrop"
-            onClick={() => setMenuOpen(false)}
-            aria-hidden="true"
-          />
-          <nav className="mobile-menu" id="mobile-menu" aria-label="Меню">
-            {navLinks.map((link) =>
-              link.internal ? (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="mobile-menu-link is-active"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ) : (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="mobile-menu-link"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {link.label}
-                </a>
-              )
-            )}
-            {/* Below 440px the login button tightens up to fit beside the
-                burger; repeating it here gives it a full-width target. */}
-            <a
-              href={account.href}
-              className="mobile-menu-link mobile-menu-account"
-              onClick={() => setMenuOpen(false)}
-            >
-              {account.label}
-            </a>
-          </nav>
-        </>
+        <nav
+          className="mobile-menu"
+          id="mobile-menu"
+          aria-label="Меню"
+          onClick={() => setMenuOpen(false)}
+        >
+          {navLinks.map((link) =>
+            link.internal ? (
+              <Link key={link.href} href={link.href} className="mobile-menu-link is-active">
+                {link.label}
+              </Link>
+            ) : (
+              <a key={link.href} href={link.href} className="mobile-menu-link">
+                {link.label}
+              </a>
+            )
+          )}
+        </nav>
       )}
     </>
   );
