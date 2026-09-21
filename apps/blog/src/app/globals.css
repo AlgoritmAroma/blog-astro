@@ -169,12 +169,11 @@ h3 {
    black area — hero, header before scroll, footer — shows the same stars
    instead of only the boxed hero section. */
 
-.page-stars {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-color: var(--black);
-  background-image: radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent 60%),
+/* The field itself is a custom property because the open mobile menu draws
+   the same sky (it covers the page, so it can't let the layer below show
+   through) and two hand-kept copies of twelve gradients would drift. */
+:root {
+  --star-field: radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent 60%),
     radial-gradient(1.5px 1.5px at 25% 65%, #fff, transparent 60%),
     radial-gradient(1px 1px at 40% 15%, #fff, transparent 60%),
     radial-gradient(1.5px 1.5px at 60% 45%, #fff, transparent 60%),
@@ -186,8 +185,17 @@ h3 {
     radial-gradient(1.5px 1.5px at 65% 10%, #fff, transparent 60%),
     radial-gradient(1px 1px at 5% 50%, #fff, transparent 60%),
     radial-gradient(1.5px 1.5px at 95% 90%, #fff, transparent 60%);
+  --star-size: 420px 420px;
+}
+
+.page-stars {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--black);
+  background-image: var(--star-field);
   background-repeat: repeat;
-  background-size: 420px 420px;
+  background-size: var(--star-size);
   opacity: 0.55;
   pointer-events: none;
 }
@@ -390,38 +398,45 @@ h3 {
   display: block;
 }
 
-/* Covers the whole page under the menu. Without it the panel was a dark box
-   on a dark hero with no edge to it, and the only way to close the menu was
-   to hit the burger again — a tap anywhere else did nothing. */
-.mobile-menu-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 998;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(2px);
-  animation: mobile-menu-fade 0.2s ease;
-}
+/* The same menu the main site opens: the sky fills the screen and the
+   sections sit centred in it, rather than dropping a bordered card under the
+   header. It carries the starfield itself because it covers the page, so the
+   fixed `.page-stars` layer beneath can no longer show through.
 
+   A tap on the empty field closes it — the links are the only thing in here
+   that isn't the background. */
 .mobile-menu {
   position: fixed;
-  top: 87px;
-  left: 10px;
-  right: 10px;
+  inset: 0;
   z-index: 999;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px;
-  border-radius: 24px;
-  background: rgba(18, 18, 18, 0.98);
-  border: 1px solid var(--orange-12);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(12px);
-  /* A long menu on a short screen (landscape phone) scrolls inside itself
-     rather than running off the bottom edge. */
-  max-height: calc(100dvh - 97px);
+  justify-content: center;
+  align-items: center;
+  /* No gap: the links carry their own padding, which is what makes them big
+     enough to hit. That puts about 50px between them, the rhythm the main
+     site's menu has, without shrinking the tap target to the 21px the bare
+     line box would be. */
+  gap: 0;
+  padding: 96px 24px 32px;
+  background-color: var(--black);
+  /* A short screen (landscape phone) scrolls rather than pushing the last
+     section off the bottom edge. */
   overflow-y: auto;
   animation: mobile-menu-fade 0.2s ease;
+}
+
+/* The stars go on a layer of their own: the field is dimmed to 0.55 the way
+   `.page-stars` dims it, while the menu behind it stays fully opaque. */
+.mobile-menu::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--star-field);
+  background-repeat: repeat;
+  background-size: var(--star-size);
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 @keyframes mobile-menu-fade {
@@ -434,31 +449,22 @@ h3 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mobile-menu,
-  .mobile-menu-backdrop {
+  .mobile-menu {
     animation: none;
   }
 }
 
+/* Above the starfield layer, and with room around each one to be tapped. */
 .mobile-menu-link {
-  padding: 14px 16px;
+  position: relative;
+  padding: 12px 8px;
   color: var(--orange);
   font-size: var(--small);
-  border-bottom: 1px solid var(--orange-12);
-}
-
-.mobile-menu-link:last-child {
-  border-bottom: none;
-}
-
-/* The account link closes the list rather than reading as one more section. */
-.mobile-menu-account {
-  margin-top: 6px;
-  border-bottom: none;
-  border-radius: 16px;
-  background: var(--orange-12);
-  font-weight: 700;
   text-align: center;
+}
+
+.mobile-menu-link:hover {
+  color: var(--orange-70);
 }
 
 @media (max-width: 860px) {
@@ -476,12 +482,10 @@ h3 {
 }
 
 /* A viewport that grows past the breakpoint while the menu is open (a phone
-   turned sideways, a resized window) leaves the burger hidden — so the panel
-   and, more to the point, the backdrop that swallows every click have to go
-   with it. */
+   turned sideways, a resized window) leaves the burger hidden, so the panel
+   that covers the whole screen has to go with it. */
 @media (min-width: 861px) {
-  .mobile-menu,
-  .mobile-menu-backdrop {
+  .mobile-menu {
     display: none;
   }
 }
