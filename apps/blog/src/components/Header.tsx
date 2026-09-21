@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import NightSky from "@/components/NightSky";
 import { MAIN_SITE_SECTIONS, accountLink, sectionHref } from "@/lib/main-site-links";
 
 export default function Header({
@@ -113,6 +114,7 @@ export default function Header({
           aria-label="Меню"
           onClick={() => setMenuOpen(false)}
         >
+          <NightSky />
           {navLinks.map((link) =>
             link.internal ? (
               <Link key={link.href} href={link.href} className="mobile-menu-link is-active">

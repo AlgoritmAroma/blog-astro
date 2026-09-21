@@ -169,11 +169,12 @@ h3 {
    black area — hero, header before scroll, footer — shows the same stars
    instead of only the boxed hero section. */
 
-/* The field itself is a custom property because the open mobile menu draws
-   the same sky (it covers the page, so it can't let the layer below show
-   through) and two hand-kept copies of twelve gradients would drift. */
-:root {
-  --star-field: radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent 60%),
+.page-stars {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--black);
+  background-image: radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent 60%),
     radial-gradient(1.5px 1.5px at 25% 65%, #fff, transparent 60%),
     radial-gradient(1px 1px at 40% 15%, #fff, transparent 60%),
     radial-gradient(1.5px 1.5px at 60% 45%, #fff, transparent 60%),
@@ -185,17 +186,8 @@ h3 {
     radial-gradient(1.5px 1.5px at 65% 10%, #fff, transparent 60%),
     radial-gradient(1px 1px at 5% 50%, #fff, transparent 60%),
     radial-gradient(1.5px 1.5px at 95% 90%, #fff, transparent 60%);
-  --star-size: 420px 420px;
-}
-
-.page-stars {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-color: var(--black);
-  background-image: var(--star-field);
   background-repeat: repeat;
-  background-size: var(--star-size);
+  background-size: 420px 420px;
   opacity: 0.55;
   pointer-events: none;
 }
@@ -400,8 +392,8 @@ h3 {
 
 /* The same menu the main site opens: the sky fills the screen and the
    sections sit centred in it, rather than dropping a bordered card under the
-   header. It carries the starfield itself because it covers the page, so the
-   fixed `.page-stars` layer beneath can no longer show through.
+   header. It draws its own sky because it covers the page, so the fixed
+   `.page-stars` layer beneath can no longer show through.
 
    A tap on the empty field closes it — the links are the only thing in here
    that isn't the background. */
@@ -411,15 +403,27 @@ h3 {
   z-index: 999;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* Centred by the auto margins on the first and last link below, not by
+     `justify-content: center`: when the list is taller than a landscape
+     phone's screen, centring overflows it upwards, past the scroll origin,
+     and the first sections end up under the header with no way to scroll to
+     them. Auto margins centre the same way when there is room and drop to 0
+     when there isn't. */
+  justify-content: flex-start;
   align-items: center;
   /* No gap: the links carry their own padding, which is what makes them big
-     enough to hit. That puts about 50px between them, the rhythm the main
-     site's menu has, without shrinking the tap target to the 21px the bare
-     line box would be. */
+     enough to hit. With the line box at its natural 21px that puts them 45px
+     apart — the main site's rhythm exactly — without shrinking the tap
+     target to the bare 21px. */
   gap: 0;
-  padding: 96px 24px 32px;
-  background-color: var(--black);
+  /* The main site's list sits 14px above the true centre of the screen
+     (measured at 390×844: first label at 310px, where dead centre would put
+     it at 324), so the bottom padding is 28px deeper than the top. The top
+     96px only matters on a screen short enough to scroll, where it keeps the
+     first section clear of the header. */
+  padding: 96px 24px 124px;
+  /* The main site's sky is drawn on pure black, not the page's #121212. */
+  background-color: #000;
   /* A short screen (landscape phone) scrolls rather than pushing the last
      section off the bottom edge. */
   overflow-y: auto;
@@ -427,16 +431,14 @@ h3 {
      and the two should open the same way. */
 }
 
-/* The stars go on a layer of their own: the field is dimmed to 0.55 the way
-   `.page-stars` dims it, while the menu behind it stays fully opaque. */
-.mobile-menu::before {
-  content: "";
-  position: absolute;
+/* The sky itself (components/NightSky.tsx). Fixed, so a landscape phone
+   scrolling the list doesn't scroll the stars with it; it comes first in the
+   menu, so the links — positioned too — paint over it. */
+.night-sky {
+  position: fixed;
   inset: 0;
-  background-image: var(--star-field);
-  background-repeat: repeat;
-  background-size: var(--star-size);
-  opacity: 0.55;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 
@@ -446,11 +448,22 @@ h3 {
   padding: 12px 8px;
   color: var(--orange);
   font-size: var(--small);
+  /* The body's taller line height made each row 50px; the main site's
+     sections sit on the font's natural line. */
+  line-height: normal;
   text-align: center;
 }
 
 .mobile-menu-link:hover {
   color: var(--orange-70);
+}
+
+.mobile-menu-link:first-of-type {
+  margin-top: auto;
+}
+
+.mobile-menu-link:last-child {
+  margin-bottom: auto;
 }
 
 @media (max-width: 860px) {
