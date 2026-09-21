@@ -559,12 +559,6 @@ h3 {
   .site-header .btn {
     padding: 0 12px;
   }
-
-  .mobile-menu {
-    top: 80px;
-    left: 6px;
-    right: 6px;
-  }
 }
 
 /* At 280px even ordinary headline words ("САМОСТОЯТЕЛЬНО") are wider than the
