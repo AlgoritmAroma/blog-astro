@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, type Dispatch, type SetStateAction } from "react";
-import { createCategoryAction } from "@/app/posts/actions";
+import { createCategoryAction } from "@/app/(protected)/posts/actions";
 
 /**
  * Rubric picker: a dropdown of every stored rubric as checkboxes, with a field
