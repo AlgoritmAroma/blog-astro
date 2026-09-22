@@ -19,12 +19,15 @@ export default async function AdminDashboard() {
           <div className="admin-stat-label">Комментариев на модерации</div>
         </div>
       </div>
-      <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 24 }}>
         <Link href="/posts/new" className="admin-btn">
           + Новая статья
         </Link>
         <Link href="/comments" className="admin-btn-ghost" style={{ padding: "10px 18px", borderRadius: 8 }}>
           Модерация комментариев
+        </Link>
+        <Link href="/categories" className="admin-btn-ghost" style={{ padding: "10px 18px", borderRadius: 8 }}>
+          Рубрики
         </Link>
       </div>
     </>
