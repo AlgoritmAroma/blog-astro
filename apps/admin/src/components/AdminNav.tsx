@@ -16,7 +16,6 @@ const TABS = [
   { href: "/", label: "Дашборд" },
   { href: "/posts", label: "Статьи" },
   { href: "/comments", label: "Комментарии" },
-  { href: "/categories", label: "Рубрики" },
 ];
 
 export default function AdminNav({ blogUrl }: { blogUrl: string }) {

@@ -493,6 +493,152 @@ button:disabled {
   color: #2f7a3a;
 }
 
+/* ---------- dashboard actions + rubrics dialog ---------- */
+
+/* Buttons in the dashboard row keep their natural width and wrap to a new
+   line when there's no room, so they never shrink into or overlap each other.
+   The rubrics <dialog> also lives in this row (it renders in the top layer,
+   so its DOM spot doesn't matter) and must not inherit the nowrap. */
+.admin-dash-actions > :not(dialog) {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* A <button> styled to match the <a class="admin-btn-ghost"> next to it —
+   including the link's underline, so the row reads as one set. */
+.admin-dash-btn {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font: inherit;
+  line-height: normal;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.admin-dialog {
+  width: min(720px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid #e4ddd0;
+  border-radius: 12px;
+  background: #fff;
+  color: #1a1410;
+  box-shadow: 0 20px 60px rgba(26, 20, 16, 0.25);
+}
+
+/* Only while open — a closed <dialog> must keep the UA's display: none. */
+.admin-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-dialog::backdrop {
+  background: rgba(26, 20, 16, 0.5);
+}
+
+.admin-dialog-head {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e4ddd0;
+}
+
+.admin-dialog-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.admin-dialog-close {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* The list scrolls inside the dialog; the header with the close button stays. */
+.admin-dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 20px 20px;
+}
+
+.admin-dialog-hint {
+  margin: 0 0 12px;
+}
+
+.admin-cat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-cat-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #e4ddd0;
+}
+
+.admin-cat-item:last-child {
+  border-bottom: none;
+}
+
+.admin-cat-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-cat-name {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.admin-cat-order {
+  flex: 0 0 88px;
+  width: 88px;
+}
+
+.admin-cat-fields .admin-btn {
+  flex: none;
+}
+
+.admin-cat-msg {
+  margin: 6px 0 0;
+}
+
+.admin-cat-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.admin-cat-count {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .admin-dialog-head {
+    padding: 12px 16px;
+  }
+
+  .admin-dialog-body {
+    padding: 12px 16px 16px;
+  }
+}
+
 /* ---------- rich text field ---------- */
 
 .rt {
