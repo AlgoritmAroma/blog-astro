@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { FROM_FORECAST_COOKIE } from "@/lib/from-forecast";
 
 /**
  * Origin of the main Astro AI site — everything in the header, the footer and
@@ -58,6 +59,10 @@ const AUTH_COOKIE = "accessToken";
  * case where showing "Профиль" to a signed-out reader would be worst.
  */
 export async function readerIsSignedIn(): Promise<boolean> {
-  const token = (await cookies()).get(AUTH_COOKIE)?.value;
-  return Boolean(token && token.trim());
+  const jar = await cookies();
+  const token = jar.get(AUTH_COOKIE)?.value;
+  // Or the reader came over from the main site's `/forecast` — see
+  // proxy.ts. That works today, while the auth cookie above can't reach
+  // the blog until the main site writes it on the parent domain.
+  return Boolean(token && token.trim()) || jar.get(FROM_FORECAST_COOKIE)?.value === "1";
 }
