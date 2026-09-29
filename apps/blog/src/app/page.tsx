@@ -4,7 +4,8 @@ import CloudDivider from "@/components/CloudDivider";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { getAllPosts } from "@/lib/posts";
 import { getCategoryNames } from "@/lib/categories";
-import { mainSiteUrl } from "@/lib/site";
+import { mainSiteUrl, readerIsSignedIn } from "@/lib/site";
+import { homeHref } from "@/lib/main-site-links";
 
 export const metadata: Metadata = {
   title: "Блог об астрологии, натальных картах и совместимости — ИИ Astro",
@@ -19,7 +20,7 @@ export default async function BlogHome() {
     <>
       <section style={{ padding: "24px 0 96px" }}>
         <div className="container" style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
-          <Breadcrumbs items={[{ label: "Главная", href: mainSiteUrl() }, { label: "Блог" }]} />
+          <Breadcrumbs items={[{ label: "Главная", href: homeHref(mainSiteUrl(), await readerIsSignedIn()) }, { label: "Блог" }]} />
           <h1 style={{ margin: "24px 0" }}>Блог</h1>
           <p
             style={{

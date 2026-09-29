@@ -28,6 +28,13 @@ const SIGNED_IN_PREFIX = "/forecast";
  * call-to-action offers, so it is the one both of them open. */
 const ENTRY_PATH = `${SIGNED_IN_PREFIX}/natal`;
 
+/** Where the logo and the "Главная" crumb go. The main site's own header
+ * sends a signed-in reader's logo to `/main`, its home behind the login,
+ * rather than to the public landing page — the blog does the same. */
+export function homeHref(mainSite: string, signedIn: boolean): string {
+  return signedIn ? `${mainSite}/main` : mainSite;
+}
+
 /** A section's URL — the public page, or the one behind the login. */
 export function sectionHref(mainSite: string, path: string, signedIn: boolean): string {
   return `${mainSite}${signedIn ? SIGNED_IN_PREFIX : ""}${path}`;

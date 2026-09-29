@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import NightSky from "@/components/NightSky";
-import { MAIN_SITE_SECTIONS, accountLink, sectionHref } from "@/lib/main-site-links";
+import { MAIN_SITE_SECTIONS, accountLink, homeHref, sectionHref } from "@/lib/main-site-links";
 
 export default function Header({
   mainSite,
@@ -69,7 +69,7 @@ export default function Header({
   return (
     <>
       <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
-        <a href={mainSite} style={{ flexShrink: 0 }}>
+        <a href={homeHref(mainSite, signedIn)} style={{ flexShrink: 0 }}>
           <h3 style={{ fontSize: "var(--h3)" }}>ASTRO AI</h3>
         </a>
 
