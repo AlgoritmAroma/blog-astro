@@ -29,9 +29,10 @@ function clamp(value: number): number {
  * guessing; editing without the first is aiming at something you cannot see.
  *
  * The right panel takes its shape from `coverAspectRatio`, the same function
- * the blog's card uses, so the two cannot disagree. For most uploads it comes
- * out the same shape as the original and nothing is cropped at all — which is
- * itself worth showing, since it is the answer to "why is my picture cut".
+ * the blog's card uses, so the two cannot disagree — which is why it is
+ * called here rather than the 3:2 being written out again. In the grid that
+ * is a fixed 3:2 for every cover, so anything that isn't 3:2 gets cropped,
+ * and this panel is the answer to "why is my picture cut".
  *
  * The point is stored as percentages and handed to CSS `object-position`,
  * which frames it as closely as the overflow allows and clamps by itself at

@@ -37,13 +37,15 @@ export default async function BlogHome() {
 
       <CloudDivider fill="#fbf2e1" />
 
-      {/* The cloud divider ends flush against the beige, so without a top inset
-          the first row of cards starts right where the wave lands. */}
+      {/* The grid sits as far below the wave as the intro text sits above it:
+          the intro has 96px under it, and 80px here plus the 16px of beige
+          under the wave's lowest dip is 96px again. At 40px the first row of
+          cards (the rubrics, on a phone) crowded up against the wave. */}
       <section
         style={{
           background: "var(--beige-bg)",
           color: "var(--brown)",
-          paddingTop: 40,
+          paddingTop: 80,
           paddingBottom: 100,
         }}
       >

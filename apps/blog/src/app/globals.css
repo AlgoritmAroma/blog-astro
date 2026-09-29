@@ -359,66 +359,129 @@ h3 {
   flex-shrink: 0;
 }
 
+/* The same control the main site's header carries: a filled circle the size
+   of the "Войти" pill beside it, with the icon in the dark ink the pill uses
+   for its label. It was a bare transparent square with three thin gold rules,
+   which read as a different site's header sitting above the same content. */
 .mobile-menu-btn {
   display: none;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 5px;
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   padding: 0;
-  background: transparent;
+  background: var(--orange);
   border: none;
+  border-radius: 200px;
+  color: #121212;
   cursor: pointer;
   flex-shrink: 0;
+  transition: background 0.3s ease;
 }
 
-.mobile-menu-btn span {
+.mobile-menu-btn:hover {
+  background: var(--orange-70);
+}
+
+/* Both icons are `fill`/`stroke: currentColor`, so the colour is set once
+   above and the open and closed states cannot drift apart. */
+.mobile-menu-btn svg {
   display: block;
-  width: 20px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--orange);
-  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
-.mobile-menu-btn.is-open span:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
-}
+/* The same menu the main site opens: the sky fills the screen and the
+   sections sit centred in it, rather than dropping a bordered card under the
+   header. It draws its own sky because it covers the page, so the fixed
+   `.page-stars` layer beneath can no longer show through.
 
-.mobile-menu-btn.is-open span:nth-child(2) {
-  opacity: 0;
-}
-
-.mobile-menu-btn.is-open span:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
-}
-
+   A tap on the empty field closes it — the links are the only thing in here
+   that isn't the background. */
 .mobile-menu {
   position: fixed;
-  top: 87px;
-  left: 10px;
-  right: 10px;
+  inset: 0;
   z-index: 999;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px;
-  border-radius: 24px;
-  background: rgba(18, 18, 18, 0.97);
-  backdrop-filter: blur(12px);
+  /* Centred by the auto margins on the first and last link below, not by
+     `justify-content: center`: when the list is taller than a landscape
+     phone's screen, centring overflows it upwards, past the scroll origin,
+     and the first sections end up under the header with no way to scroll to
+     them. Auto margins centre the same way when there is room and drop to 0
+     when there isn't. */
+  justify-content: flex-start;
+  align-items: center;
+  /* No gap: the links carry their own padding, which is what makes them big
+     enough to hit. With the line box at its natural 21px that puts them 45px
+     apart — the main site's rhythm exactly — without shrinking the tap
+     target to the bare 21px. */
+  gap: 0;
+  /* The main site's list sits 14px above the true centre of the screen
+     (measured at 390×844: first label at 310px, where dead centre would put
+     it at 324), so the bottom padding is 28px deeper than the top. The top
+     96px only matters on a screen short enough to scroll, where it keeps the
+     first section clear of the header. */
+  padding: 96px 24px 124px;
+  /* No background of its own — the black is the sky's (`.night-sky`), which
+     is taller than this box on purpose. */
+  /* A short screen (landscape phone) scrolls rather than pushing the last
+     section off the bottom edge. */
+  overflow-y: auto;
+  /* A drag that reaches the end of the menu stops here instead of scrolling
+     the page underneath — which on a phone is what makes the browser's bars
+     slide in and out, resizing the screen under the open menu. */
+  overscroll-behavior: contain;
+  /* No entrance animation: the main site's menu is simply there on the tap,
+     and the two should open the same way. */
 }
 
+/* The sky itself (components/NightSky.tsx). Fixed, so a landscape phone
+   scrolling the list doesn't scroll the stars with it; it comes first in the
+   menu, so the links — positioned too — paint over it.
+
+   It is as tall as the screen gets with the browser's bars hidden (`lvh`),
+   not as tall as it is right now. With `inset: 0` it stopped where the
+   current viewport stops, which on a phone is short of the real bottom edge
+   whenever the address bar or the bottom bar is showing — iOS draws its
+   bottom bar translucent over the page — and moves while they slide. On the
+   main site that never shows, because the page behind its menu is the same
+   black sky; here, below the hero, it is the cream page, and every short
+   pixel came through as a pale strip along the bottom. 100vh is the
+   fallback, and on mobile browsers without `lvh` it already means the tall
+   height. */
+.night-sky {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
+  background-color: #000;
+  pointer-events: none;
+}
+
+/* Above the starfield layer, and with room around each one to be tapped. */
 .mobile-menu-link {
-  padding: 14px 16px;
+  position: relative;
+  padding: 12px 8px;
   color: var(--orange);
   font-size: var(--small);
-  border-bottom: 1px solid var(--orange-12);
+  /* The body's taller line height made each row 50px; the main site's
+     sections sit on the font's natural line. */
+  line-height: normal;
+  text-align: center;
+}
+
+.mobile-menu-link:hover {
+  color: var(--orange-70);
+}
+
+.mobile-menu-link:first-of-type {
+  margin-top: auto;
 }
 
 .mobile-menu-link:last-child {
-  border-bottom: none;
+  margin-bottom: auto;
 }
 
 @media (max-width: 860px) {
@@ -435,6 +498,9 @@ h3 {
   }
 }
 
+/* A viewport that grows past the breakpoint while the menu is open (a phone
+   turned sideways, a resized window) leaves the burger hidden, so the panel
+   that covers the whole screen has to go with it. */
 @media (min-width: 861px) {
   .mobile-menu {
     display: none;
@@ -460,9 +526,14 @@ h3 {
     gap: 4px;
   }
 
+  /* Tighter padding and a smaller label are what buy the width here; the
+     height stays 45px so the pill and the burger circle beside it stay the
+     same size, as they are on the main site. Measured at 412, 390, 375, 360,
+     344, 320 and 280px: the burger's right edge keeps 12–16px inside the
+     header and nothing overflows. */
   .site-header .btn {
-    height: 38px;
-    min-height: 38px;
+    height: 45px;
+    min-height: 45px;
     padding: 0 16px;
     font-size: 0.8125rem;
   }
@@ -505,12 +576,6 @@ h3 {
 
   .site-header .btn {
     padding: 0 12px;
-  }
-
-  .mobile-menu {
-    top: 80px;
-    left: 6px;
-    right: 6px;
   }
 }
 
@@ -759,9 +824,9 @@ h3 {
    of bounded cards rather than images with text floating under them. */
 /* Every card is the same height, whatever its cover and however much text it
    has: short text leaves white space above the footer, long text is cut with
-   "......." (ClampedText). */
+   "…" (ClampedText). */
 .post-card {
-  --post-card-height: 554px;
+  --post-card-height: 570px;
   display: flex;
   flex-direction: column;
   height: var(--post-card-height);
@@ -793,15 +858,19 @@ h3 {
 .post-card__cover-link {
   display: block;
   flex-shrink: 0;
-  padding: 18px 18px 0;
+  padding: 24px 24px 0;
 }
 
-/* The frame still follows the cover's proportions, but a fixed-height card
-   can't let a portrait cover take the room its title and text need. Past this
-   height the frame stops growing and the picture is cropped around the focus
-   point the editor set. */
+/* In the grid every cover is shown in the same 3:2 frame, whatever shape the
+   file is — letting the frame follow each cover's own proportions gave a row
+   of cards whose pictures, tags and titles all started at different heights.
+   What doesn't fit the frame is cropped around the focus point the editor
+   set. (The article hero still follows its cover; there is nothing for it to
+   line up against — see lib/cover-frame.ts.)
+   The cap keeps a wide column from handing the whole card to the picture. */
 .post-card .cover-frame {
-  max-height: 240px;
+  aspect-ratio: 3 / 2;
+  max-height: 260px;
   border: 1px solid var(--orange-12);
   border-radius: 16px;
 }
@@ -837,7 +906,7 @@ h3 {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  padding: 16px 18px 18px;
+  padding: 18px 24px 24px;
 }
 
 /* An article can be in several rubrics, so the pills wrap onto more lines
@@ -879,14 +948,6 @@ h3 {
   line-height: 1.5;
   opacity: 0.75;
   margin-bottom: 14px;
-}
-
-/* The "......." ClampedText puts where it cut the text. Set in the body face
-   everywhere: the headline face draws dots too small to read as "there's
-   more". */
-.clamped-text__more {
-  font-family: var(--font-involve), sans-serif;
-  letter-spacing: 0.04em;
 }
 
 /* At most three lines of title, so a long one can't squeeze the excerpt out. */

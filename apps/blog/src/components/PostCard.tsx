@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import ClampedText from "@/components/ClampedText";
 import { type PostMeta } from "@/lib/blog";
-import { coverAspectRatio } from "@/lib/cover-frame";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
 import { publicViews } from "@/lib/views";
 
@@ -12,10 +11,10 @@ export default function PostCard({ post }: { post: PostMeta }) {
   return (
     <article className="post-card">
       <Link href={href} className="post-card__cover-link">
-        <div
-          className="cover-frame"
-          style={{ width: "100%", aspectRatio: coverAspectRatio(post.coverSize, "card") }}
-        >
+        {/* No per-cover aspect ratio here: in the grid every card shows its
+            cover in the same 3:2 frame the stylesheet gives it, and the focus
+            point below decides what survives the crop. */}
+        <div className="cover-frame" style={{ width: "100%" }}>
           <Image
             src={post.cover}
             alt={post.title}

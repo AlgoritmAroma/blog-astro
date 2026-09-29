@@ -27,6 +27,10 @@ export default async function AdminCommentsPage({
   const activeStatus = (status ?? "all") as CommentStatus | "all";
   const comments = await getAllComments(activeStatus === "all" ? undefined : (activeStatus as CommentStatus));
 
+  // The blog is a different deploy on a different host, so an article link
+  // has to be absolute — a relative "/blog/…" opened the admin's own 404.
+  const blogUrl = (process.env.NEXT_PUBLIC_BLOG_URL ?? "https://aiastro.ru").replace(/\/+$/, "");
+
   return (
     <>
       <h1 style={{ marginBottom: 20 }}>Комментарии</h1>
@@ -60,9 +64,9 @@ export default async function AdminCommentsPage({
             {comments.map((c) => (
               <tr key={c.id}>
                 <td>
-                  <Link href={`/blog/${c.postSlug}`} target="_blank">
+                  <a href={`${blogUrl}/blog/${c.postSlug}`} target="_blank" rel="noopener">
                     {c.postTitle}
-                  </Link>
+                  </a>
                 </td>
                 <td>{c.name}</td>
                 <td style={{ maxWidth: 320 }}>{c.text}</td>

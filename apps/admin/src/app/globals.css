@@ -18,11 +18,19 @@ body {
   color: #1a1410;
 }
 
+/* Sticky, because the tab bar is also how you get back out of a long article
+   form — having to scroll to the top of the block editor first made it feel
+   like there was no way back. */
 .admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 32px;
+  gap: 12px 24px;
+  padding: 14px 32px;
   background: #1a1410;
   color: #f5f2ec;
 }
@@ -36,17 +44,61 @@ body {
   opacity: 0.8;
 }
 
-.admin-header nav {
+.admin-brand {
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-header-right {
   display: flex;
-  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   align-items: center;
   font-size: 0.9rem;
+}
+
+.admin-nav-link {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-nav-link:hover {
+  opacity: 1;
+  background: rgba(245, 242, 236, 0.1);
+}
+
+/* The open tab. Also lights up on a section's sub-pages (/posts/new,
+   /posts/12/edit), so the tab reads as "you are here, click to go back". */
+.admin-nav-link.is-active {
+  background: rgba(245, 242, 236, 0.16);
+  border-color: rgba(245, 242, 236, 0.35);
+  font-weight: 600;
 }
 
 .admin-main {
   max-width: 1100px;
   margin: 0 auto;
   padding: 32px;
+}
+
+@media (max-width: 720px) {
+  .admin-header {
+    padding: 12px 16px;
+  }
+
+  .admin-main {
+    padding: 20px 16px;
+  }
 }
 
 .admin-card {
@@ -169,6 +221,18 @@ body {
 
 .admin-btn-ghost:hover {
   background: #ece5d6;
+}
+
+/* The ghost button is drawn for the light page; in the dark header its
+   near-black label sat on a near-black bar and "Выйти" read as an empty
+   outlined box. */
+.admin-header .admin-btn-ghost {
+  color: #f5f2ec;
+  border-color: rgba(245, 242, 236, 0.35);
+}
+
+.admin-header .admin-btn-ghost:hover {
+  background: rgba(245, 242, 236, 0.1);
 }
 
 .admin-badge {

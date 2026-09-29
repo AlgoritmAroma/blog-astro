@@ -30,16 +30,34 @@ export function mainSiteUrl(): string {
  * nothing here to authorise, only a choice between two sets of links. Its
  * mere presence is the hint that the reader has an account open.
  *
- * ⚠ The main site currently writes it as `accessToken=…; path=/` with no
+ * ⚠ For this to say anything at all, the main site has to write the cookie on
+ * the *parent* domain. It currently writes `accessToken=…; path=/` with no
  * `domain=`, which makes it host-only — `aiastro.ru` sends it to itself and
  * nowhere else, so the blog, on `blog.aiastro.ru`, never receives it and this
- * reads `false` for everyone. Adding `; domain=.aiastro.ru` to those writes on
- * the main site is what switches this on; until then the blog behaves exactly
- * as it does today, which is why the fallback is the signed-out links.
+ * reads `false` for everyone. The fix is `; domain=.aiastro.ru` on every
+ * `document.cookie` write of `accessToken`/`refreshToken` **and on the two
+ * that clear them on logout** — a deletion without the `domain=` cannot
+ * remove a cookie that was set with one, and a reader who logged out would go
+ * on looking signed-in to the blog forever.
+ *
+ * Nothing else can stand in for it from this side: the token also lives in
+ * the main site's `localStorage`, which is per-origin, and `api.aiastro.ru`
+ * answers with `Access-Control-Allow-Origin: *`, which by the CORS rules
+ * forbids sending credentials at all. Until that one-line change lands the
+ * blog behaves exactly as it does today, which is why the fallback is the
+ * signed-out links.
  */
 const AUTH_COOKIE = "accessToken";
 
-/** Whether the reader has a session open on the main site. */
+/**
+ * Whether the reader has a session open on the main site.
+ *
+ * The value has to be non-empty, not merely present: clearing a cookie in the
+ * browser is writing an empty one with an expiry in the past, and a cookie
+ * caught mid-deletion (or one an older logout left behind) is exactly the
+ * case where showing "Профиль" to a signed-out reader would be worst.
+ */
 export async function readerIsSignedIn(): Promise<boolean> {
-  return (await cookies()).has(AUTH_COOKIE);
+  const token = (await cookies()).get(AUTH_COOKIE)?.value;
+  return Boolean(token && token.trim());
 }
