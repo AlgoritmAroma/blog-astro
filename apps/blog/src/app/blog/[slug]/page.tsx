@@ -96,23 +96,24 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
       <CloudDivider fill={post.bgColor} />
 
-      {/* `flow-root` is load-bearing: the cover's negative top margin is on
-          this section's first child, and without a block formatting context
-          it collapses straight through the section's top edge and drags the
-          whole beige block up with it. That is what has been hiding the cloud
-          divider — the background started 10px above the wave and painted
-          over all 90px of it. With the context established, the margin moves
-          the cover alone and the wave stays visible either side of it. */}
+      {/* `flow-root` is load-bearing: the cover's top margin is on this
+          section's first child, and without a block formatting context it
+          collapses straight through the section's top edge and moves the
+          whole beige block with it. (When that margin was negative, it once
+          dragged the background up over all 90px of the cloud divider.) With
+          the context established, the margin moves the cover alone. */}
       <section style={{ background: post.bgColor, paddingBottom: 96, display: "flow-root" }}>
         <div className="container" style={{ maxWidth: 820 }}>
           <div
             className="cover-frame"
             style={{
               width: "100%",
-              // Half the divider's 90px, so the cover tucks into the wave
-              // rather than clearing it or hiding it, and the gap underneath
-              // is the same order as the overlap above.
-              margin: "-45px auto 56px",
+              // The cover sits as far below the wave as the meta row sits
+              // above it: the intro has 56px under it, and the wave's lowest
+              // dip is ~45px above the divider's bottom edge, so 12px here
+              // puts the cover 56px under the dip. At -45px it started right
+              // at the dip and read as jammed up against the dark edge.
+              margin: "12px auto 56px",
               maxWidth: 640,
               aspectRatio: coverAspectRatio(post.coverSize, "article"),
             }}
