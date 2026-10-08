@@ -26,6 +26,22 @@ export function mainSiteUrl(): string {
 }
 
 /**
+ * Origin of the blog itself — the host its sitemap, robots.txt and canonical
+ * links name. That is not the main site: the blog is served from its own
+ * subdomain, and a sitemap may only list URLs on the host it is served from,
+ * so a sitemap full of `https://aiastro.ru/blog/…` links would be thrown out
+ * by every search engine as foreign.
+ *
+ * Runtime env for the same reason as `MAIN_SITE_URL` above: dev and prod run
+ * one image, and the dev blog must not announce itself under the live
+ * domain. Unset = the live blog.
+ */
+export function blogSiteUrl(): string {
+  const fromEnv = process.env.SITE_URL?.trim();
+  return fromEnv ? fromEnv.replace(/\/+$/, "") : "https://blog.aiastro.ru";
+}
+
+/**
  * The cookie the main site writes when a reader logs in. It holds a JWT, but
  * the blog never looks inside it and never trusts it for anything: there is
  * nothing here to authorise, only a choice between two sets of links. Its

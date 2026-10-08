@@ -29,6 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     // exactly as before.
     title: post.metaTitle ? { absolute: post.metaTitle } : post.title,
     description: post.excerpt,
+    alternates: { canonical: `/blog/${post.slug}` },
   };
 }
 

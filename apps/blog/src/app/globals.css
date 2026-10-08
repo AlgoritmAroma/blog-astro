@@ -914,7 +914,27 @@ h3 {
 .post-card__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* The card's pills run at about half the size of the article page's. Cards
+   are a fixed height and the excerpt gets whatever the pills, the title and
+   the footer leave over — at full size three rubrics took three 30px rows,
+   and the excerpt was left with room for "…" alone. The pill also grows with
+   its text here instead of holding a fixed 30px, so a rubric name longer than
+   the card is wide wraps inside its border rather than spilling out of it. */
+.post-card__tags .tag {
+  height: auto;
+  min-height: 18px;
+  padding: 2px 8px;
+  /* Still a full pill on one line (half the 18px height); a name wrapped
+     onto two or three lines gets a rounded box instead of a lozenge. */
+  border-radius: 10px;
+  font-size: 0.625rem;
+  line-height: 1.25;
+  letter-spacing: 0.2px;
+  white-space: normal;
 }
 
 /* 36px under the pills, not 20: the h1's 16px top margin collapses into this
