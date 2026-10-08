@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   title: "Блог об астрологии, натальных картах и совместимости — ИИ Astro",
   description:
     "Полезные статьи об астрологии, натальных картах, совместимости партнеров, знаках зодиака и астрологических прогнозах. Читайте экспертные материалы, рекомендации и ответы на популярные вопросы от AI Astro для самопознания и принятия важных жизненных решений.",
+  // Folds `/?utm_source=…` and the like back into the one listing URL.
+  alternates: { canonical: "/" },
 };
 
 export default async function BlogHome() {

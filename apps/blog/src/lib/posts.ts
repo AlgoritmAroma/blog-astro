@@ -116,6 +116,19 @@ export async function getRelatedPosts(current: PostMeta, limit = 2): Promise<Pos
   return [...sameCategory, ...others].slice(0, limit);
 }
 
+/** One row per article for the sitemap: its slug and when it last changed.
+ * `updated_at` is set on insert and on every save from the admin (and not by
+ * the view counter), so it is the article's real "last modified". Every row
+ * in `posts` is live on the site — there are no drafts — so nothing is
+ * filtered out here that the listing shows. */
+export async function getSitemapPosts(): Promise<{ slug: string; updatedAt: Date }[]> {
+  await connection();
+  const rows = await query<{ slug: string; updated_at: Date }>(
+    `SELECT slug, updated_at FROM posts ORDER BY published_at DESC`
+  );
+  return rows.map((row) => ({ slug: row.slug, updatedAt: new Date(row.updated_at) }));
+}
+
 /** Returns false when the slug matches no article — the caller uses that to
  * avoid recording a made-up slug in the reader's "already counted" cookie. */
 export async function incrementViews(slug: string): Promise<boolean> {

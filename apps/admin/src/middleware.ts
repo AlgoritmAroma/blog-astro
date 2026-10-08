@@ -24,6 +24,7 @@ export async function middleware(req: NextRequest) {
 export const config = {
   // The whole app is the admin panel now (it's a separate deploy on its own
   // subdomain), so gate everything except the login page and Next internals
-  // instead of matching a specific sub-path.
-  matcher: ["/((?!login|_next/static|_next/image|favicon.ico).*)"],
+  // instead of matching a specific sub-path. robots.txt is public too, so
+  // crawlers read "Disallow: /" instead of a redirect to /login.
+  matcher: ["/((?!login|robots\\.txt|_next/static|_next/image|favicon.ico).*)"],
 };
