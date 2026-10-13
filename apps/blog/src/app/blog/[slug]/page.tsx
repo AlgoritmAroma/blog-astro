@@ -8,10 +8,12 @@ import AuthorBox from "@/components/AuthorBox";
 import Comments from "@/components/Comments";
 import PostBlocks from "@/components/PostBlocks";
 import ViewTracker from "@/components/ViewTracker";
+import JsonLd from "@/components/JsonLd";
 import { stripInlineHtml } from "@/lib/blocks";
 import { coverAspectRatio } from "@/lib/cover-frame";
 import { getPostBySlug, getRelatedPosts } from "@/lib/posts";
-import { mainSiteUrl, readerIsSignedIn } from "@/lib/site";
+import { blogSiteUrl, mainSiteUrl, readerIsSignedIn } from "@/lib/site";
+import { blogPostGraph } from "@/lib/structured-data";
 import { homeHref, startHref } from "@/lib/main-site-links";
 import { formatDate, formatViewCount, formatReadingTime } from "@/lib/format";
 import { publicViews } from "@/lib/views";
@@ -49,19 +51,17 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   return (
     <>
       <ViewTracker slug={post.slug} />
+      <JsonLd data={blogPostGraph(blogSiteUrl(), post)} />
       {faqItems.length > 0 && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "FAQPage",
-              mainEntity: faqItems.map((item) => ({
-                "@type": "Question",
-                name: item.q,
-                acceptedAnswer: { "@type": "Answer", text: stripInlineHtml(item.a) },
-              })),
-            }),
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faqItems.map((item) => ({
+              "@type": "Question",
+              name: item.q,
+              acceptedAnswer: { "@type": "Answer", text: stripInlineHtml(item.a) },
+            })),
           }}
         />
       )}

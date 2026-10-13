@@ -52,6 +52,9 @@ export type Post = PostMeta & {
    * predate it — those fall back to `contentHtml`. */
   blocks: Block[];
   bgColor: string;
+  /** ISO instant of the last save from the admin — the view counter doesn't
+   * touch it. */
+  updatedAt: string;
   contentHtml: string;
   comments: Comment[];
 };

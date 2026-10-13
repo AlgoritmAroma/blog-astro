@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import BlogGrid from "@/components/BlogGrid";
 import CloudDivider from "@/components/CloudDivider";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import JsonLd from "@/components/JsonLd";
 import { getAllPosts } from "@/lib/posts";
 import { getCategoryNames } from "@/lib/categories";
-import { mainSiteUrl, readerIsSignedIn } from "@/lib/site";
+import { paginate } from "@/lib/blog";
+import { blogSiteUrl, mainSiteUrl, readerIsSignedIn } from "@/lib/site";
+import { blogHomeGraph } from "@/lib/structured-data";
 import { homeHref } from "@/lib/main-site-links";
 
 export const metadata: Metadata = {
@@ -20,6 +23,11 @@ export default async function BlogHome() {
 
   return (
     <>
+      {/* Lists the first page of the grid — the cards this URL is served
+          with. The later pages and the rubric filter are client-side state
+          with no address of their own, so there is no other URL whose list
+          they could be. */}
+      <JsonLd data={blogHomeGraph(blogSiteUrl(), paginate(posts, 1))} />
       <section style={{ padding: "24px 0 96px" }}>
         <div className="container" style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
           <Breadcrumbs items={[{ label: "Главная", href: homeHref(mainSiteUrl(), await readerIsSignedIn()) }, { label: "Блог" }]} />
