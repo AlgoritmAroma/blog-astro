@@ -4,9 +4,7 @@ import { useMemo, useState } from "react";
 import PostCard from "@/components/PostCard";
 import CategorySidebar from "@/components/CategorySidebar";
 import Pagination from "@/components/Pagination";
-import { getPageCount, paginate, type PostMeta } from "@/lib/blog";
-
-const PAGE_SIZE = 20;
+import { getPageCount, paginate, PAGE_SIZE, type PostMeta } from "@/lib/blog";
 
 export default function BlogGrid({ posts, categories }: { posts: PostMeta[]; categories: string[] }) {
   const [active, setActive] = useState<string | null>(null);

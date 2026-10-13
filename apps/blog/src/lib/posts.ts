@@ -27,6 +27,7 @@ type PostRow = {
   bg_color: string | null;
   blocks: unknown;
   published_at: string;
+  updated_at: Date | string;
   reading_time: number | null;
   views: number;
 };
@@ -99,6 +100,7 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
     ...rowToMeta(row),
     blocks,
     bgColor: row.bg_color || DEFAULT_BACKGROUND,
+    updatedAt: new Date(row.updated_at).toISOString(),
     contentHtml,
     comments: await getApprovedComments(row.id),
   };
