@@ -25,14 +25,30 @@ export type ImageBlock = {
 };
 export type QuoteBlock = { type: "quote"; html: string };
 export type FaqBlock = { type: "faq"; items: { q: string; a: string }[] };
+/** A plain grid: every row has the same number of cells, each cell is the
+ * same inline-HTML subset as a paragraph. No merged cells (colspan/rowspan) —
+ * the grid model keeps the editor simple and the output predictable, and the
+ * tables an astrology article needs (aspects, dates, planets) don't need them.
+ * When `header` is true the first row is rendered as <thead>/<th>. */
+export type TableBlock = { type: "table"; header: boolean; rows: string[][]; caption: string };
 
-export type Block = HeadingBlock | ParagraphBlock | ListBlock | ImageBlock | QuoteBlock | FaqBlock;
+export type Block =
+  | HeadingBlock
+  | ParagraphBlock
+  | ListBlock
+  | ImageBlock
+  | QuoteBlock
+  | FaqBlock
+  | TableBlock;
 
 export const BLOCK_LIMIT = 300;
 const TEXT_LIMIT = 20_000;
 const SHORT_TEXT_LIMIT = 500;
 const LIST_ITEM_LIMIT = 200;
 const FAQ_ITEM_LIMIT = 100;
+export const TABLE_MAX_ROWS = 60;
+export const TABLE_MAX_COLS = 10;
+const TABLE_CELL_LIMIT = 2_000;
 
 /** Pastel page backgrounds an editor can pick per article. All are light
  * enough for the site's --brown body text; the first one is the site default
@@ -315,9 +331,44 @@ function parseBlock(raw: unknown): Block | null {
       return { type: "faq", items };
     }
 
+    case "table":
+      return parseTable(input);
+
     default:
       return null;
   }
+}
+
+function parseTable(input: Record<string, unknown>): TableBlock | null {
+  const rawRows = Array.isArray(input.rows) ? input.rows.slice(0, TABLE_MAX_ROWS) : [];
+  let rows = rawRows.map((row) =>
+    (Array.isArray(row) ? row.slice(0, TABLE_MAX_COLS) : []).map((cell) =>
+      sanitizeInlineHtml(clampText(cell, TABLE_CELL_LIMIT))
+    )
+  );
+
+  const isEmptyRow = (row: string[]) => row.every((cell) => !stripInlineHtml(cell));
+  let header = input.header === true;
+  // An empty header row is not a header the editor meant to keep — dropping it
+  // (rather than letting the next row slide up into <thead>) is the honest
+  // reading of "nothing was typed there".
+  if (header && rows.length > 0 && isEmptyRow(rows[0])) {
+    header = false;
+    rows = rows.slice(1);
+  }
+  rows = rows.filter((row) => !isEmptyRow(row));
+  if (rows.length === 0) return null;
+
+  // Ragged input is padded to a rectangle so the renderer can trust the shape.
+  const cols = Math.max(...rows.map((row) => row.length));
+  rows = rows.map((row) => (row.length < cols ? [...row, ...Array(cols - row.length).fill("")] : row));
+
+  return {
+    type: "table",
+    header,
+    rows,
+    caption: stripInlineHtml(clampText(input.caption, SHORT_TEXT_LIMIT)),
+  };
 }
 
 /** Validates + sanitizes a blocks payload of unknown provenance. Invalid or
@@ -362,6 +413,13 @@ export function blocksToPlainText(blocks: Block[]): string {
       case "faq":
         parts.push(block.items.map((item) => `${item.q} ${stripInlineHtml(item.a)}`).join(" "));
         break;
+      case "table":
+        parts.push(
+          [block.caption, ...block.rows.map((row) => row.map(stripInlineHtml).filter(Boolean).join(" "))]
+            .filter(Boolean)
+            .join("\n")
+        );
+        break;
     }
   }
   return parts.filter(Boolean).join("\n\n");
@@ -387,6 +445,14 @@ const BULLET_RE = /^\s*[-*+]\s+(.*)$/;
 const ORDERED_RE = /^\s*\d+[.)]\s+(.*)$/;
 const QUOTE_RE = /^\s*>\s?(.*)$/;
 const IMAGE_RE = /^\s*!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*$/;
+const TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
+const TABLE_DIVIDER_RE = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
+
+/** `| a | b |` → ["a", "b"]. Escaped pipes (`\|`) stay inside their cell. */
+function splitTableRow(line: string): string[] {
+  const body = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  return body.split(/(?<!\\)\|/).map((cell) => cell.replace(/\\\|/g, "|").trim());
+}
 
 /**
  * Converts a legacy markdown article body into constructor blocks.
@@ -395,7 +461,7 @@ const IMAGE_RE = /^\s*!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*$/;
  * `posts.content`; opening one in the constructor runs it through here so the
  * editor shows real blocks instead of an empty canvas. Covers everything the
  * migrated articles actually use: ##/### headings, bullet and numbered lists,
- * blockquotes, images, bold, italic and links.
+ * blockquotes, images, GFM tables, bold, italic and links.
  */
 export function markdownToBlocks(markdown: string): Block[] {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
@@ -426,9 +492,24 @@ export function markdownToBlocks(markdown: string): Block[] {
     flushList();
   };
 
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
     if (!line.trim()) {
       flushAll();
+      continue;
+    }
+
+    // GFM table: a pipe row immediately followed by a `|---|---|` divider.
+    if (TABLE_ROW_RE.test(line) && TABLE_DIVIDER_RE.test(lines[lineIndex + 1] ?? "")) {
+      flushAll();
+      const rows = [splitTableRow(line)];
+      lineIndex += 2;
+      while (lineIndex < lines.length && TABLE_ROW_RE.test(lines[lineIndex])) {
+        rows.push(splitTableRow(lines[lineIndex]));
+        lineIndex++;
+      }
+      lineIndex--;
+      raw.push({ type: "table", header: true, rows: rows.map((row) => row.map(inlineMarkdownToHtml)), caption: "" });
       continue;
     }
 
