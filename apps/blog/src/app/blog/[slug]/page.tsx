@@ -103,7 +103,18 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           whole beige block with it. (When that margin was negative, it once
           dragged the background up over all 90px of the cloud divider.) With
           the context established, the margin moves the cover alone. */}
-      <section style={{ background: post.bgColor, paddingBottom: 96, display: "flow-root" }}>
+      <section
+        style={
+          {
+            background: post.bgColor,
+            paddingBottom: 96,
+            display: "flow-root",
+            // Read by the table block, which needs an opaque tint of this
+            // colour for its scroll shadows.
+            "--article-bg": post.bgColor,
+          } as React.CSSProperties
+        }
+      >
         <div className="container" style={{ maxWidth: 820 }}>
           <div
             className="cover-frame"

@@ -25,6 +25,8 @@ export default function RichText({
   minHeight = 80,
   label,
   focusSignal,
+  bare = false,
+  onFocus,
 }: {
   value: string;
   onChange: (html: string) => void;
@@ -36,6 +38,11 @@ export default function RichText({
   /** Bump this number to move the caret into this field — used when Enter in
    * a list creates the next item. */
   focusSignal?: number;
+  /** No toolbar and no frame — for table cells, where one shared toolbar
+   * above the grid formats whichever cell holds the caret. Ctrl+B / Ctrl+I
+   * still work natively. */
+  bare?: boolean;
+  onFocus?: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   // Tracks the HTML we last handed to the parent. Writing `value` back into
@@ -121,6 +128,27 @@ export default function RichText({
     }
   }
 
+  const input = (
+    <div
+      ref={ref}
+      className="rt-input"
+      contentEditable
+      suppressContentEditableWarning
+      role="textbox"
+      aria-label={label}
+      aria-multiline={!singleLine}
+      data-placeholder={placeholder}
+      style={{ minHeight: singleLine ? undefined : minHeight }}
+      onInput={emit}
+      onBlur={handleBlur}
+      onFocus={onFocus}
+      onPaste={handlePaste}
+      onKeyDown={handleKeyDown}
+    />
+  );
+
+  if (bare) return <div className="rt rt-bare">{input}</div>;
+
   return (
     <div className="rt">
       <div className="rt-toolbar">
@@ -147,21 +175,7 @@ export default function RichText({
           Без формата
         </button>
       </div>
-      <div
-        ref={ref}
-        className="rt-input"
-        contentEditable
-        suppressContentEditableWarning
-        role="textbox"
-        aria-label={label}
-        aria-multiline={!singleLine}
-        data-placeholder={placeholder}
-        style={{ minHeight: singleLine ? undefined : minHeight }}
-        onInput={emit}
-        onBlur={handleBlur}
-        onPaste={handlePaste}
-        onKeyDown={handleKeyDown}
-      />
+      {input}
     </div>
   );
 }

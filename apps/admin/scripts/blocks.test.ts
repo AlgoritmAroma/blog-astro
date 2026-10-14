@@ -232,6 +232,82 @@ check("empty markdown yields no blocks", () => {
   assert.deepEqual(markdownToBlocks("\n\n   \n"), []);
 });
 
+console.log("table blocks");
+check("table round-trips and keeps inline formatting in cells", () => {
+  const input = {
+    type: "table",
+    header: true,
+    rows: [
+      ["Планета", "<b>Знак</b>"],
+      ["Солнце", '<a href="https://aiastro.ru">Лев</a>'],
+    ],
+    caption: "Положения",
+  };
+  const [block] = parseBlocks([input]);
+  assert.equal(block.type, "table");
+  if (block.type !== "table") return;
+  assert.equal(block.header, true);
+  assert.deepEqual(block.rows[0], ["Планета", "<strong>Знак</strong>"]);
+  assert.match(block.rows[1][1], /<a href="https:\/\/aiastro\.ru" target="_blank"/);
+  assert.equal(block.caption, "Положения");
+  // Idempotent: parsing the stored form again changes nothing.
+  assert.deepEqual(parseBlocks([block]), [block]);
+});
+check("table cells cannot smuggle markup", () => {
+  const [block] = parseBlocks([
+    {
+      type: "table",
+      header: false,
+      rows: [['<script>alert(1)</script><td onclick="x">a</td>', '<a href="javascript:alert(1)">b</a>', "</table><img src=x onerror=alert(1)>"]],
+      caption: "<b>c</b>",
+    },
+  ]);
+  if (block.type !== "table") throw new Error("not a table");
+  const html = block.rows.flat().join("");
+  assert.ok(!/<(script|td|img|table)/i.test(html), html);
+  // "onerror=" may survive as escaped text; it must never be inside a tag.
+  assert.ok(!/<[^>]*\son\w+=/i.test(html), html);
+  assert.ok(!/javascript:/i.test(html), html);
+  assert.equal(block.caption, "c");
+});
+check("ragged rows are padded, empty rows dropped, limits enforced", () => {
+  const [block] = parseBlocks([
+    {
+      type: "table",
+      header: false,
+      rows: [["a"], ["", ""], ["b", "c", "d"], Array(20).fill("x")],
+    },
+  ]);
+  if (block.type !== "table") throw new Error("not a table");
+  assert.equal(block.rows.length, 3);
+  assert.deepEqual(block.rows[0], ["a", "", "", "", "", "", "", "", "", ""]);
+  assert.equal(block.rows[2].length, 10);
+  const big = parseBlocks([{ type: "table", header: false, rows: Array(100).fill(["x"]) }])[0];
+  assert.equal(big.type === "table" && big.rows.length, 60);
+});
+check("empty header row is dropped instead of promoting the first data row", () => {
+  const [block] = parseBlocks([{ type: "table", header: true, rows: [["", ""], ["a", "b"]] }]);
+  assert.equal(block.type === "table" && block.header, false);
+  assert.deepEqual(block.type === "table" && block.rows, [["a", "b"]]);
+});
+check("an all-empty table or garbage rows yield no block", () => {
+  assert.deepEqual(parseBlocks([{ type: "table", header: true, rows: [["", ""], [" ", "<b></b>"]] }]), []);
+  assert.deepEqual(parseBlocks([{ type: "table", rows: "nope" }]), []);
+  assert.deepEqual(parseBlocks([{ type: "table", rows: [null, 5, {}] }]), []);
+});
+check("table text reaches the plain-text mirror", () => {
+  const text = blocksToPlainText(parseBlocks([{ type: "table", header: true, rows: [["A", "B"], ["<b>c</b>", "d"]], caption: "Cap" }]));
+  assert.equal(text, "Cap\nA B\nc d");
+});
+check("markdown GFM tables become table blocks", () => {
+  const blocks = markdownToBlocks("Текст\n\n| Планета | Знак |\n|:---|---:|\n| **Солнце** | Лев \\| Дева |\n| Луна | Рак |\n\nПосле");
+  assert.deepEqual(blocks.map((b) => b.type), ["paragraph", "table", "paragraph"]);
+  const table = blocks[1];
+  if (table.type !== "table") return;
+  assert.equal(table.header, true);
+  assert.deepEqual(table.rows, [["Планета", "Знак"], ["<strong>Солнце</strong>", "Лев | Дева"], ["Луна", "Рак"]]);
+});
+
 if (failures > 0) {
   console.error(`\n${failures} test(s) failed`);
   process.exit(1);

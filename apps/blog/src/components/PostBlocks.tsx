@@ -1,11 +1,11 @@
 import Image from "next/image";
-import type { Block, FaqBlock } from "@/lib/blocks";
+import type { Block, FaqBlock, TableBlock } from "@/lib/blocks";
 
 /**
  * Renders an article built in the admin's block constructor.
  *
- * Inline HTML (bold/italic/links inside paragraphs, list items and FAQ
- * answers) is injected with dangerouslySetInnerHTML — it is safe here only
+ * Inline HTML (bold/italic/links inside paragraphs, list items, table cells
+ * and FAQ answers) is injected with dangerouslySetInnerHTML — it is safe here only
  * because every one of those strings went through `sanitizeInlineHtml` on the
  * server before it was stored, and again through `parseBlocks` when it was
  * read back. Do not render a block string that hasn't been through both.
@@ -62,6 +62,9 @@ export default function PostBlocks({ blocks }: { blocks: Block[] }) {
               </figure>
             );
 
+          case "table":
+            return <Table key={index} block={block} />;
+
           case "faq":
             return <Faq key={index} block={block} />;
         }
@@ -84,5 +87,39 @@ function Faq({ block }: { block: FaqBlock }) {
         </details>
       ))}
     </section>
+  );
+}
+
+/** The table scrolls sideways inside its own wrapper, so a wide one never
+ * makes the whole page scroll on a phone. The wrapper is focusable and named
+ * so keyboard users can scroll it too (WCAG "scrollable region"). */
+function Table({ block }: { block: TableBlock }) {
+  const [head, body] = block.header ? [block.rows[0], block.rows.slice(1)] : [null, block.rows];
+  return (
+    <figure className="prose-table">
+      <div className="prose-table-scroll" role="region" aria-label={block.caption || "Таблица"} tabIndex={0}>
+        <table>
+          {head && (
+            <thead>
+              <tr>
+                {head.map((cell, index) => (
+                  <th key={index} scope="col" dangerouslySetInnerHTML={{ __html: cell }} />
+                ))}
+              </tr>
+            </thead>
+          )}
+          <tbody>
+            {body.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {row.map((cell, index) => (
+                  <td key={index} dangerouslySetInnerHTML={{ __html: cell }} />
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {block.caption && <figcaption>{block.caption}</figcaption>}
+    </figure>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import RichText from "./RichText";
 import ImageField from "./ImageField";
+import TableEditor, { emptyTableRows } from "./TableEditor";
 import type { Align, Block } from "@/lib/blocks";
 
 /** Blocks carry a stable client-side id purely so React keys survive
@@ -34,6 +35,7 @@ const BLOCK_KINDS: { type: BlockKind; label: string; hint: string }[] = [
   { type: "list", label: "Список", hint: "точки или номера" },
   { type: "image", label: "Картинка", hint: "с ALT" },
   { type: "quote", label: "Цитата", hint: "выделенный блок" },
+  { type: "table", label: "Таблица", hint: "строки и столбцы" },
   { type: "faq", label: "FAQ", hint: "вопрос-ответ" },
 ];
 
@@ -52,6 +54,8 @@ function createBlock(type: BlockKind): EditorBlock {
       return { _id, type: "quote", html: "" };
     case "faq":
       return { _id, type: "faq", items: [{ q: "", a: "" }] };
+    case "table":
+      return { _id, type: "table", header: true, rows: emptyTableRows(), caption: "" };
   }
 }
 
@@ -347,6 +351,10 @@ export default function BlockEditor({
                   />
                 </div>
               </>
+            )}
+
+            {block.type === "table" && (
+              <TableEditor block={block} onChange={(changes) => patch(index, changes)} onRemove={() => remove(index)} />
             )}
 
             {block.type === "faq" && (
